@@ -4,6 +4,7 @@ import { Badge } from "@/components/ui/badge";
 import { Input } from "@/components/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Button } from "@/components/ui/button";
+import { Checkbox } from "@/components/ui/checkbox";
 import { Loader2, Search, X, Power, Trash2, Download } from "lucide-react";
 import { useLanguage } from "@/i18n/LanguageContext";
 import { toast } from "sonner";
@@ -34,6 +35,8 @@ const CouponList = () => {
   const [statusFilter, setStatusFilter] = useState("all");
   const [dateFrom, setDateFrom] = useState("");
   const [dateTo, setDateTo] = useState("");
+  const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
+  const [deleting, setDeleting] = useState(false);
   const { t } = useLanguage();
 
   useEffect(() => {
@@ -72,6 +75,23 @@ const CouponList = () => {
     setDateTo("");
   };
 
+  const toggleSelect = (id: string) => {
+    setSelectedIds((prev) => {
+      const next = new Set(prev);
+      if (next.has(id)) next.delete(id);
+      else next.add(id);
+      return next;
+    });
+  };
+
+  const toggleSelectAll = () => {
+    if (selectedIds.size === filteredCoupons.length) {
+      setSelectedIds(new Set());
+    } else {
+      setSelectedIds(new Set(filteredCoupons.map((c) => c.id)));
+    }
+  };
+
   const handleToggleActive = async (coupon: Coupon) => {
     const newStatus = !coupon.is_active;
     const { error } = await supabase
@@ -93,8 +113,25 @@ const CouponList = () => {
       toast.error(t("actionFailed"));
     } else {
       setCoupons((prev) => prev.filter((c) => c.id !== coupon.id));
+      setSelectedIds((prev) => { const next = new Set(prev); next.delete(coupon.id); return next; });
       toast.success(t("couponDeleted"));
     }
+  };
+
+  const handleDeleteSelected = async () => {
+    const count = selectedIds.size;
+    if (!confirm(t("confirmDeleteMultiple", { count }))) return;
+    setDeleting(true);
+    const ids = Array.from(selectedIds);
+    const { error } = await supabase.from("coupons").delete().in("id", ids);
+    if (error) {
+      toast.error(t("actionFailed"));
+    } else {
+      setCoupons((prev) => prev.filter((c) => !selectedIds.has(c.id)));
+      setSelectedIds(new Set());
+      toast.success(t("couponsDeleted", { count }));
+    }
+    setDeleting(false);
   };
 
   const handleExportExcel = () => {
@@ -137,6 +174,8 @@ const CouponList = () => {
     );
   }
 
+  const allSelected = filteredCoupons.length > 0 && selectedIds.size === filteredCoupons.length;
+
   return (
     <div className="space-y-4">
       {/* Filters */}
@@ -177,7 +216,7 @@ const CouponList = () => {
         />
       </div>
 
-      <div className="flex items-center justify-between">
+      <div className="flex items-center justify-between flex-wrap gap-2">
         <div className="flex items-center gap-3">
           {hasFilters && (
             <span className="text-sm text-muted-foreground">
@@ -187,6 +226,17 @@ const CouponList = () => {
           {hasFilters && (
             <Button variant="ghost" size="sm" onClick={clearFilters} className="text-muted-foreground hover:text-foreground">
               <X className="me-1 h-4 w-4" /> {t("clearFilters")}
+            </Button>
+          )}
+          {selectedIds.size > 0 && (
+            <Button
+              variant="destructive"
+              size="sm"
+              onClick={handleDeleteSelected}
+              disabled={deleting}
+            >
+              {deleting ? <Loader2 className="h-4 w-4 me-1 animate-spin" /> : <Trash2 className="h-4 w-4 me-1" />}
+              {t("deleteSelected", { count: selectedIds.size })}
             </Button>
           )}
         </div>
@@ -207,6 +257,13 @@ const CouponList = () => {
             <table className="w-full text-sm">
               <thead>
                 <tr className="bg-secondary">
+                  <th className="px-4 py-3">
+                    <Checkbox
+                      checked={allSelected}
+                      onCheckedChange={toggleSelectAll}
+                      aria-label={t("selectAll")}
+                    />
+                  </th>
                   <th className="px-4 py-3 text-start text-muted-foreground font-semibold">#</th>
                   <th className="px-4 py-3 text-start text-muted-foreground font-semibold">{t("code")}</th>
                   <th className="px-4 py-3 text-start text-muted-foreground font-semibold">{t("type")}</th>
@@ -224,7 +281,13 @@ const CouponList = () => {
               </thead>
               <tbody>
                 {filteredCoupons.map((c, i) => (
-                  <tr key={c.id} className="border-t border-border hover:bg-secondary/50 transition-colors">
+                  <tr key={c.id} className={`border-t border-border transition-colors ${selectedIds.has(c.id) ? "bg-primary/5" : "hover:bg-secondary/50"}`}>
+                    <td className="px-4 py-3">
+                      <Checkbox
+                        checked={selectedIds.has(c.id)}
+                        onCheckedChange={() => toggleSelect(c.id)}
+                      />
+                    </td>
                     <td className="px-4 py-3 text-muted-foreground">{i + 1}</td>
                     <td className="px-4 py-3 font-mono text-primary font-semibold">{c.code}</td>
                     <td className="px-4 py-3 text-foreground">{c.discount_type === "percentage" ? "%" : t("fixedAmount")}</td>

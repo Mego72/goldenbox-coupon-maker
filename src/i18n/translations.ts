@@ -70,6 +70,10 @@ export const translations = {
     couponDeleted: "تم حذف الكوبون",
     actionFailed: "فشل تنفيذ الإجراء",
     exportFiltered: "📥 تصدير إكسل",
+    selectAll: "تحديد الكل",
+    deleteSelected: "🗑️ حذف المحدد ({count})",
+    confirmDeleteMultiple: "هل أنت متأكد من حذف {count} كوبون؟",
+    couponsDeleted: "تم حذف {count} كوبون",
   },
   en: {
     appName: "GoldenBox Discount Coupons",
@@ -140,6 +144,10 @@ export const translations = {
     couponDeleted: "Coupon deleted",
     actionFailed: "Action failed",
     exportFiltered: "📥 Export Excel",
+    selectAll: "Select All",
+    deleteSelected: "🗑️ Delete Selected ({count})",
+    confirmDeleteMultiple: "Are you sure you want to delete {count} coupons?",
+    couponsDeleted: "{count} coupons deleted",
   },
 } as const;
 
