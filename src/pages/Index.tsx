@@ -3,7 +3,8 @@ import { useNavigate } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Button } from "@/components/ui/button";
-import { LogOut, Sparkles, List } from "lucide-react";
+import { LogOut, Sparkles, List, LayoutDashboard } from "lucide-react";
+import CouponDashboard from "@/components/CouponDashboard";
 import CouponGenerator from "@/components/CouponGenerator";
 import CouponList from "@/components/CouponList";
 import LanguageSwitcher from "@/components/LanguageSwitcher";
@@ -51,8 +52,11 @@ const Index = () => {
         </div>
       </header>
       <main className="max-w-6xl mx-auto px-6 py-8">
-        <Tabs defaultValue="generate" className="space-y-6">
+        <Tabs defaultValue="dashboard" className="space-y-6">
           <TabsList className="bg-secondary">
+            <TabsTrigger value="dashboard" className="data-[state=active]:gold-gradient-bg data-[state=active]:text-primary-foreground">
+              <LayoutDashboard className="h-4 w-4 me-2" /> {t("dashboard")}
+            </TabsTrigger>
             <TabsTrigger value="generate" className="data-[state=active]:gold-gradient-bg data-[state=active]:text-primary-foreground">
               <Sparkles className="h-4 w-4 me-2" /> {t("generate")}
             </TabsTrigger>
@@ -60,6 +64,9 @@ const Index = () => {
               <List className="h-4 w-4 me-2" /> {t("savedCoupons")}
             </TabsTrigger>
           </TabsList>
+          <TabsContent value="dashboard">
+            <CouponDashboard />
+          </TabsContent>
           <TabsContent value="generate">
             <CouponGenerator />
           </TabsContent>
