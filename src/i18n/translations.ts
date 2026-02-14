@@ -85,6 +85,7 @@ export const translations = {
     last30Days: "آخر 30 يوم",
     noData: "لا توجد بيانات",
     branch: "الفرع",
+    allBranches: "كل الفروع",
   },
   en: {
     appName: "GoldenBox Discount Coupons",
@@ -170,6 +171,7 @@ export const translations = {
     last30Days: "Last 30 Days",
     noData: "No data",
     branch: "Branch",
+    allBranches: "All Branches",
   },
 } as const;
 
