@@ -1,7 +1,7 @@
 import { useEffect, useState, useMemo } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Loader2, TicketCheck, TicketX, Ticket, TicketMinus } from "lucide-react";
+import { Loader2, TicketCheck, TicketX, Ticket, TicketMinus, MapPin } from "lucide-react";
 import { useLanguage } from "@/i18n/LanguageContext";
 import { BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer, PieChart, Pie, Cell } from "recharts";
 
@@ -11,6 +11,7 @@ interface Coupon {
   is_consumed: boolean;
   consumed_at: string | null;
   company_name: string | null;
+  branch_name: string | null;
   created_at: string;
 }
 
@@ -25,7 +26,7 @@ const CouponDashboard = () => {
     const fetch = async () => {
       const { data } = await supabase
         .from("coupons")
-        .select("id, is_active, is_consumed, consumed_at, company_name, created_at");
+        .select("id, is_active, is_consumed, consumed_at, company_name, branch_name, created_at");
       if (data) setCoupons(data);
       setLoading(false);
     };
@@ -76,6 +77,20 @@ const CouponDashboard = () => {
       .sort((a, b) => b[1] - a[1])
       .slice(0, 5)
       .map(([name, count]) => ({ name, count }));
+  }, [coupons]);
+
+  const branchData = useMemo(() => {
+    const map: Record<string, { total: number; consumed: number }> = {};
+    coupons.forEach((c) => {
+      if (c.branch_name) {
+        if (!map[c.branch_name]) map[c.branch_name] = { total: 0, consumed: 0 };
+        map[c.branch_name].total++;
+        if (c.is_consumed) map[c.branch_name].consumed++;
+      }
+    });
+    return Object.entries(map)
+      .map(([name, d]) => ({ name, consumed: d.consumed, total: d.total }))
+      .sort((a, b) => b.consumed - a.consumed);
   }, [coupons]);
 
   if (loading) {
@@ -160,37 +175,76 @@ const CouponDashboard = () => {
         </Card>
       </div>
 
-      {/* Top Companies */}
-      <Card className="bg-secondary border-border">
-        <CardHeader>
-          <CardTitle className="text-foreground text-lg">{t("topCompanies")}</CardTitle>
-        </CardHeader>
-        <CardContent>
-          {topCompanies.length === 0 ? (
-            <p className="text-muted-foreground text-sm">{t("noData")}</p>
-          ) : (
-            <div className="space-y-3">
-              {topCompanies.map((c) => (
-                <div key={c.name} className="flex items-center justify-between">
-                  <span className="text-foreground text-sm">{c.name}</span>
-                  <div className="flex items-center gap-3">
-                    <div className="w-32 h-2 rounded-full bg-background overflow-hidden">
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+        {/* Top Companies */}
+        <Card className="bg-secondary border-border">
+          <CardHeader>
+            <CardTitle className="text-foreground text-lg">{t("topCompanies")}</CardTitle>
+          </CardHeader>
+          <CardContent>
+            {topCompanies.length === 0 ? (
+              <p className="text-muted-foreground text-sm">{t("noData")}</p>
+            ) : (
+              <div className="space-y-3">
+                {topCompanies.map((c) => (
+                  <div key={c.name} className="flex items-center justify-between">
+                    <span className="text-foreground text-sm">{c.name}</span>
+                    <div className="flex items-center gap-3">
+                      <div className="w-32 h-2 rounded-full bg-background overflow-hidden">
+                        <div
+                          className="h-full rounded-full"
+                          style={{
+                            width: `${(c.count / stats.total) * 100}%`,
+                            background: "hsl(45, 93%, 47%)",
+                          }}
+                        />
+                      </div>
+                      <span className="text-sm text-muted-foreground w-8 text-end">{c.count}</span>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            )}
+          </CardContent>
+        </Card>
+
+        {/* Branch Breakdown */}
+        <Card className="bg-secondary border-border">
+          <CardHeader>
+            <CardTitle className="text-foreground text-lg flex items-center gap-2">
+              <MapPin className="h-5 w-5 text-primary" />
+              {t("branchBreakdown")}
+            </CardTitle>
+          </CardHeader>
+          <CardContent>
+            {branchData.length === 0 ? (
+              <p className="text-muted-foreground text-sm">{t("noData")}</p>
+            ) : (
+              <div className="space-y-4">
+                {branchData.map((b) => (
+                  <div key={b.name} className="space-y-1.5">
+                    <div className="flex items-center justify-between">
+                      <span className="text-foreground text-sm font-medium">{b.name}</span>
+                      <span className="text-sm text-muted-foreground">
+                        {b.consumed} / {b.total}
+                      </span>
+                    </div>
+                    <div className="w-full h-2 rounded-full bg-background overflow-hidden">
                       <div
-                        className="h-full rounded-full"
+                        className="h-full rounded-full transition-all"
                         style={{
-                          width: `${(c.count / stats.total) * 100}%`,
+                          width: `${b.total > 0 ? (b.consumed / b.total) * 100 : 0}%`,
                           background: "hsl(45, 93%, 47%)",
                         }}
                       />
                     </div>
-                    <span className="text-sm text-muted-foreground w-8 text-end">{c.count}</span>
                   </div>
-                </div>
-              ))}
-            </div>
-          )}
-        </CardContent>
-      </Card>
+                ))}
+              </div>
+            )}
+          </CardContent>
+        </Card>
+      </div>
     </div>
   );
 };
