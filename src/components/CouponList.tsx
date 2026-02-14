@@ -4,9 +4,10 @@ import { Badge } from "@/components/ui/badge";
 import { Input } from "@/components/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Button } from "@/components/ui/button";
-import { Loader2, Search, X, Power, Trash2 } from "lucide-react";
+import { Loader2, Search, X, Power, Trash2, Download } from "lucide-react";
 import { useLanguage } from "@/i18n/LanguageContext";
 import { toast } from "sonner";
+import * as XLSX from "xlsx";
 
 interface Coupon {
   id: string;
@@ -96,6 +97,29 @@ const CouponList = () => {
     }
   };
 
+  const handleExportExcel = () => {
+    const wsData = filteredCoupons.map((c, i) => ({
+      "#": i + 1,
+      [t("code")]: c.code,
+      [t("type")]: c.discount_type === "percentage" ? t("percentage") : t("fixedAmount"),
+      [t("value")]: c.discount_value,
+      [t("maxValue")]: c.max_discount_value ?? t("noLimit"),
+      [t("company")]: c.company_name || "-",
+      [t("description")]: c.description || "-",
+      [t("expiry")]: c.expiry_date ? new Date(c.expiry_date).toLocaleDateString() : "-",
+      [t("consumedBy")]: c.consumed_by_customer || "-",
+      [t("mobile")]: c.consumed_by_mobile || "-",
+      [t("consumedAt")]: c.consumed_at ? new Date(c.consumed_at).toLocaleDateString() : "-",
+      [t("status")]: c.is_consumed ? t("consumed") : c.is_active ? t("active") : t("inactive"),
+    }));
+    const ws = XLSX.utils.json_to_sheet(wsData);
+    ws["!cols"] = [{ wch: 5 }, { wch: 22 }, { wch: 14 }, { wch: 10 }, { wch: 14 }, { wch: 20 }, { wch: 30 }, { wch: 14 }, { wch: 20 }, { wch: 16 }, { wch: 14 }, { wch: 12 }];
+    const wb = XLSX.utils.book_new();
+    XLSX.utils.book_append_sheet(wb, ws, "Coupons");
+    XLSX.writeFile(wb, `GoldenBox_Coupons_${new Date().toISOString().slice(0, 10)}.xlsx`);
+    toast.success(t("excelDownloaded"));
+  };
+
   if (loading) {
     return (
       <div className="flex items-center justify-center py-20">
@@ -153,16 +177,25 @@ const CouponList = () => {
         />
       </div>
 
-      {hasFilters && (
-        <div className="flex items-center justify-between">
-          <span className="text-sm text-muted-foreground">
-            {filteredCoupons.length} / {coupons.length}
-          </span>
-          <Button variant="ghost" size="sm" onClick={clearFilters} className="text-muted-foreground hover:text-foreground">
-            <X className="me-1 h-4 w-4" /> {t("clearFilters")}
-          </Button>
+      <div className="flex items-center justify-between">
+        <div className="flex items-center gap-3">
+          {hasFilters && (
+            <span className="text-sm text-muted-foreground">
+              {filteredCoupons.length} / {coupons.length}
+            </span>
+          )}
+          {hasFilters && (
+            <Button variant="ghost" size="sm" onClick={clearFilters} className="text-muted-foreground hover:text-foreground">
+              <X className="me-1 h-4 w-4" /> {t("clearFilters")}
+            </Button>
+          )}
         </div>
-      )}
+        {filteredCoupons.length > 0 && (
+          <Button onClick={handleExportExcel} variant="outline" className="gold-border text-primary hover:bg-primary/10">
+            <Download className="me-2 h-4 w-4" /> {t("exportFiltered")}
+          </Button>
+        )}
+      </div>
 
       {filteredCoupons.length === 0 ? (
         <div className="text-center py-12 text-muted-foreground">
