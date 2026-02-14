@@ -4,8 +4,9 @@ import { Badge } from "@/components/ui/badge";
 import { Input } from "@/components/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Button } from "@/components/ui/button";
-import { Loader2, Search, X } from "lucide-react";
+import { Loader2, Search, X, Power, Trash2 } from "lucide-react";
 import { useLanguage } from "@/i18n/LanguageContext";
+import { toast } from "sonner";
 
 interface Coupon {
   id: string;
@@ -68,6 +69,31 @@ const CouponList = () => {
     setStatusFilter("all");
     setDateFrom("");
     setDateTo("");
+  };
+
+  const handleToggleActive = async (coupon: Coupon) => {
+    const newStatus = !coupon.is_active;
+    const { error } = await supabase
+      .from("coupons")
+      .update({ is_active: newStatus })
+      .eq("id", coupon.id);
+    if (error) {
+      toast.error(t("actionFailed"));
+    } else {
+      setCoupons((prev) => prev.map((c) => c.id === coupon.id ? { ...c, is_active: newStatus } : c));
+      toast.success(newStatus ? t("couponActivated") : t("couponDeactivated"));
+    }
+  };
+
+  const handleDelete = async (coupon: Coupon) => {
+    if (!confirm(t("confirmDelete"))) return;
+    const { error } = await supabase.from("coupons").delete().eq("id", coupon.id);
+    if (error) {
+      toast.error(t("actionFailed"));
+    } else {
+      setCoupons((prev) => prev.filter((c) => c.id !== coupon.id));
+      toast.success(t("couponDeleted"));
+    }
   };
 
   if (loading) {
@@ -160,6 +186,7 @@ const CouponList = () => {
                   <th className="px-4 py-3 text-start text-muted-foreground font-semibold">{t("mobile")}</th>
                   <th className="px-4 py-3 text-start text-muted-foreground font-semibold">{t("consumedAt")}</th>
                   <th className="px-4 py-3 text-start text-muted-foreground font-semibold">{t("status")}</th>
+                  <th className="px-4 py-3 text-start text-muted-foreground font-semibold">{t("actions")}</th>
                 </tr>
               </thead>
               <tbody>
@@ -184,6 +211,30 @@ const CouponList = () => {
                           {c.is_active ? t("active") : t("inactive")}
                         </Badge>
                       )}
+                    </td>
+                    <td className="px-4 py-3">
+                      <div className="flex items-center gap-2">
+                        {!c.is_consumed && (
+                          <Button
+                            variant="ghost"
+                            size="sm"
+                            onClick={() => handleToggleActive(c)}
+                            className={c.is_active ? "text-yellow-500 hover:text-yellow-400" : "text-green-500 hover:text-green-400"}
+                          >
+                            <Power className="h-4 w-4 me-1" />
+                            {c.is_active ? t("deactivate") : t("activate")}
+                          </Button>
+                        )}
+                        <Button
+                          variant="ghost"
+                          size="sm"
+                          onClick={() => handleDelete(c)}
+                          className="text-destructive hover:text-destructive/80"
+                        >
+                          <Trash2 className="h-4 w-4 me-1" />
+                          {t("deleteCoupon")}
+                        </Button>
+                      </div>
                     </td>
                   </tr>
                 ))}
