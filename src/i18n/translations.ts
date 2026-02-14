@@ -86,6 +86,7 @@ export const translations = {
     noData: "لا توجد بيانات",
     branch: "الفرع",
     allBranches: "كل الفروع",
+    branchBreakdown: "استهلاك الفروع",
   },
   en: {
     appName: "GoldenBox Discount Coupons",
@@ -172,6 +173,7 @@ export const translations = {
     noData: "No data",
     branch: "Branch",
     allBranches: "All Branches",
+    branchBreakdown: "Branch Consumption",
   },
 } as const;
 
