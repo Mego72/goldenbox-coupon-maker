@@ -34,11 +34,18 @@ const CouponList = () => {
   const [loading, setLoading] = useState(true);
   const [search, setSearch] = useState("");
   const [statusFilter, setStatusFilter] = useState("all");
+  const [branchFilter, setBranchFilter] = useState("all");
   const [dateFrom, setDateFrom] = useState("");
   const [dateTo, setDateTo] = useState("");
   const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
   const [deleting, setDeleting] = useState(false);
   const { t } = useLanguage();
+
+  const branchNames = useMemo(() => {
+    const names = new Set<string>();
+    coupons.forEach((c) => { if (c.branch_name) names.add(c.branch_name); });
+    return Array.from(names).sort();
+  }, [coupons]);
 
   useEffect(() => {
     const fetchCoupons = async () => {
@@ -61,17 +68,20 @@ const CouponList = () => {
       if (statusFilter === "active" && (!c.is_active || c.is_consumed)) return false;
       if (statusFilter === "consumed" && !c.is_consumed) return false;
       if (statusFilter === "inactive" && (c.is_active || c.is_consumed)) return false;
+      if (branchFilter !== "all" && c.branch_name !== branchFilter) return false;
+      if (statusFilter === "inactive" && (c.is_active || c.is_consumed)) return false;
       if (dateFrom && c.created_at < dateFrom) return false;
       if (dateTo && c.created_at > dateTo + "T23:59:59") return false;
       return true;
     });
-  }, [coupons, search, statusFilter, dateFrom, dateTo]);
+  }, [coupons, search, statusFilter, branchFilter, dateFrom, dateTo]);
 
-  const hasFilters = search || statusFilter !== "all" || dateFrom || dateTo;
+  const hasFilters = search || statusFilter !== "all" || branchFilter !== "all" || dateFrom || dateTo;
 
   const clearFilters = () => {
     setSearch("");
     setStatusFilter("all");
+    setBranchFilter("all");
     setDateFrom("");
     setDateTo("");
   };
@@ -181,7 +191,7 @@ const CouponList = () => {
   return (
     <div className="space-y-4">
       {/* Filters */}
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-3">
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-6 gap-3">
         <div className="relative lg:col-span-2">
           <Search className="absolute start-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
           <Input
@@ -195,11 +205,22 @@ const CouponList = () => {
           <SelectTrigger className="bg-secondary border-border">
             <SelectValue />
           </SelectTrigger>
-          <SelectContent>
+          <SelectContent className="bg-popover border-border z-50">
             <SelectItem value="all">{t("all")}</SelectItem>
             <SelectItem value="active">{t("active")}</SelectItem>
             <SelectItem value="consumed">{t("consumed")}</SelectItem>
             <SelectItem value="inactive">{t("inactive")}</SelectItem>
+          </SelectContent>
+        </Select>
+        <Select value={branchFilter} onValueChange={setBranchFilter}>
+          <SelectTrigger className="bg-secondary border-border">
+            <SelectValue placeholder={t("allBranches")} />
+          </SelectTrigger>
+          <SelectContent className="bg-popover border-border z-50">
+            <SelectItem value="all">{t("allBranches")}</SelectItem>
+            {branchNames.map((name) => (
+              <SelectItem key={name} value={name}>{name}</SelectItem>
+            ))}
           </SelectContent>
         </Select>
         <Input
