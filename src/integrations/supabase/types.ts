@@ -18,43 +18,55 @@ export type Database = {
         Row: {
           batch_id: string | null
           code: string
+          company_name: string | null
+          consumed_at: string | null
+          consumed_by_customer: string | null
+          consumed_by_mobile: string | null
           created_at: string
           created_by: string | null
-          customer_name: string | null
           description: string | null
           discount_type: string
           discount_value: number
           expiry_date: string | null
           id: string
           is_active: boolean
+          is_consumed: boolean
           max_discount_value: number | null
         }
         Insert: {
           batch_id?: string | null
           code: string
+          company_name?: string | null
+          consumed_at?: string | null
+          consumed_by_customer?: string | null
+          consumed_by_mobile?: string | null
           created_at?: string
           created_by?: string | null
-          customer_name?: string | null
           description?: string | null
           discount_type: string
           discount_value: number
           expiry_date?: string | null
           id?: string
           is_active?: boolean
+          is_consumed?: boolean
           max_discount_value?: number | null
         }
         Update: {
           batch_id?: string | null
           code?: string
+          company_name?: string | null
+          consumed_at?: string | null
+          consumed_by_customer?: string | null
+          consumed_by_mobile?: string | null
           created_at?: string
           created_by?: string | null
-          customer_name?: string | null
           description?: string | null
           discount_type?: string
           discount_value?: number
           expiry_date?: string | null
           id?: string
           is_active?: boolean
+          is_consumed?: boolean
           max_discount_value?: number | null
         }
         Relationships: []
