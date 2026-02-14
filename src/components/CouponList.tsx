@@ -9,6 +9,7 @@ import { Loader2, Search, X, Power, Trash2, Download } from "lucide-react";
 import { useLanguage } from "@/i18n/LanguageContext";
 import { toast } from "sonner";
 import * as XLSX from "xlsx";
+import { BRANCHES } from "@/constants/branches";
 
 interface Coupon {
   id: string;
@@ -41,11 +42,6 @@ const CouponList = () => {
   const [deleting, setDeleting] = useState(false);
   const { t } = useLanguage();
 
-  const branchNames = useMemo(() => {
-    const names = new Set<string>();
-    coupons.forEach((c) => { if (c.branch_name) names.add(c.branch_name); });
-    return Array.from(names).sort();
-  }, [coupons]);
 
   useEffect(() => {
     const fetchCoupons = async () => {
@@ -218,7 +214,7 @@ const CouponList = () => {
           </SelectTrigger>
           <SelectContent className="bg-popover border-border z-50">
             <SelectItem value="all">{t("allBranches")}</SelectItem>
-            {branchNames.map((name) => (
+            {BRANCHES.map((name) => (
               <SelectItem key={name} value={name}>{name}</SelectItem>
             ))}
           </SelectContent>
