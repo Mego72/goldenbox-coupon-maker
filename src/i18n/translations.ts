@@ -53,6 +53,13 @@ export const translations = {
     excelDownloaded: "تم تحميل ملف الإكسل!",
     welcomeBack: "مرحباً بعودتك!",
     noLimit: "بلا حد",
+    searchPlaceholder: "بحث بالكود أو الشركة...",
+    filterStatus: "الحالة",
+    all: "الكل",
+    dateFrom: "من تاريخ",
+    dateTo: "إلى تاريخ",
+    clearFilters: "مسح الفلاتر",
+    noResults: "لا توجد نتائج مطابقة للبحث.",
   },
   en: {
     appName: "GoldenBox Discount Coupons",
@@ -106,6 +113,13 @@ export const translations = {
     excelDownloaded: "Excel file downloaded!",
     welcomeBack: "Welcome back!",
     noLimit: "No limit",
+    searchPlaceholder: "Search by code or company...",
+    filterStatus: "Status",
+    all: "All",
+    dateFrom: "From Date",
+    dateTo: "To Date",
+    clearFilters: "Clear Filters",
+    noResults: "No results match your search.",
   },
 } as const;
 
