@@ -14,7 +14,7 @@ interface GeneratedCoupon {
   discount_type: string;
   discount_value: number;
   max_discount_value: number | null;
-  customer_name: string;
+  company_name: string;
   description: string;
   expiry_date: string;
 }
@@ -36,7 +36,7 @@ const CouponGenerator = () => {
   const [discountType, setDiscountType] = useState("percentage");
   const [discountValue, setDiscountValue] = useState(10);
   const [maxDiscountValue, setMaxDiscountValue] = useState<number | null>(null);
-  const [customerName, setCustomerName] = useState("");
+  const [companyName, setCompanyName] = useState("");
   const [description, setDescription] = useState("");
   const [expiryDate, setExpiryDate] = useState("");
   const [generatedCoupons, setGeneratedCoupons] = useState<GeneratedCoupon[]>([]);
@@ -56,7 +56,7 @@ const CouponGenerator = () => {
         discount_type: discountType,
         discount_value: discountValue,
         max_discount_value: discountType === "percentage" ? maxDiscountValue : null,
-        customer_name: customerName,
+        company_name: companyName,
         description,
         expiry_date: expiryDate || new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString(),
       });
@@ -79,7 +79,7 @@ const CouponGenerator = () => {
       discount_type: c.discount_type,
       discount_value: c.discount_value,
       max_discount_value: c.max_discount_value,
-      customer_name: c.customer_name,
+      company_name: c.company_name,
       description: c.description,
       expiry_date: c.expiry_date,
       created_by: user.id,
@@ -106,7 +106,7 @@ const CouponGenerator = () => {
       [t("discountType")]: c.discount_type === "percentage" ? t("percentage") : t("fixedAmount"),
       [t("discountValue")]: c.discount_value,
       [t("maxDiscountValue")]: c.max_discount_value ?? t("noLimit"),
-      [t("customer")]: c.customer_name || "-",
+      [t("company")]: c.company_name || "-",
       [t("description")]: c.description,
       [t("expiryDate")]: new Date(c.expiry_date).toLocaleDateString(),
     }));
@@ -167,8 +167,8 @@ const CouponGenerator = () => {
           <Input type="date" value={expiryDate} onChange={(e) => setExpiryDate(e.target.value)} className="bg-secondary border-border" />
         </div>
         <div className="space-y-2">
-          <Label className="text-foreground">{t("customerName")}</Label>
-          <Input value={customerName} onChange={(e) => setCustomerName(e.target.value)} placeholder={t("customerNamePlaceholder")} className="bg-secondary border-border" />
+          <Label className="text-foreground">{t("companyName")}</Label>
+          <Input value={companyName} onChange={(e) => setCompanyName(e.target.value)} placeholder={t("companyNamePlaceholder")} className="bg-secondary border-border" />
         </div>
         <div className="space-y-2 md:col-span-2 lg:col-span-3">
           <Label className="text-foreground">{t("description")}</Label>
@@ -203,7 +203,7 @@ const CouponGenerator = () => {
                   <th className="px-4 py-3 text-start text-muted-foreground font-semibold">{t("type")}</th>
                   <th className="px-4 py-3 text-start text-muted-foreground font-semibold">{t("value")}</th>
                   <th className="px-4 py-3 text-start text-muted-foreground font-semibold">{t("maxValue")}</th>
-                  <th className="px-4 py-3 text-start text-muted-foreground font-semibold">{t("customer")}</th>
+                  <th className="px-4 py-3 text-start text-muted-foreground font-semibold">{t("company")}</th>
                   <th className="px-4 py-3 text-start text-muted-foreground font-semibold">{t("expiry")}</th>
                 </tr>
               </thead>
@@ -215,7 +215,7 @@ const CouponGenerator = () => {
                     <td className="px-4 py-3 text-foreground">{c.discount_type === "percentage" ? "%" : t("fixedAmount")}</td>
                     <td className="px-4 py-3 text-foreground">{c.discount_value}{c.discount_type === "percentage" ? "%" : ""}</td>
                     <td className="px-4 py-3 text-foreground">{c.max_discount_value ?? t("noLimit")}</td>
-                    <td className="px-4 py-3 text-foreground">{c.customer_name || "-"}</td>
+                    <td className="px-4 py-3 text-foreground">{c.company_name || "-"}</td>
                     <td className="px-4 py-3 text-muted-foreground">{new Date(c.expiry_date).toLocaleDateString()}</td>
                   </tr>
                 ))}
