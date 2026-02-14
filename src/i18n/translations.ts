@@ -69,6 +69,7 @@ export const translations = {
     couponActivated: "تم تفعيل الكوبون",
     couponDeleted: "تم حذف الكوبون",
     actionFailed: "فشل تنفيذ الإجراء",
+    exportFiltered: "📥 تصدير إكسل",
   },
   en: {
     appName: "GoldenBox Discount Coupons",
@@ -138,6 +139,7 @@ export const translations = {
     couponActivated: "Coupon activated",
     couponDeleted: "Coupon deleted",
     actionFailed: "Action failed",
+    exportFiltered: "📥 Export Excel",
   },
 } as const;
 
