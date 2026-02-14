@@ -84,6 +84,7 @@ export const translations = {
     topCompanies: "أكثر الشركات",
     last30Days: "آخر 30 يوم",
     noData: "لا توجد بيانات",
+    branch: "الفرع",
   },
   en: {
     appName: "GoldenBox Discount Coupons",
@@ -168,6 +169,7 @@ export const translations = {
     topCompanies: "Top Companies",
     last30Days: "Last 30 Days",
     noData: "No data",
+    branch: "Branch",
   },
 } as const;
 

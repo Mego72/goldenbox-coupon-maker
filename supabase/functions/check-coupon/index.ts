@@ -27,7 +27,7 @@ Deno.serve(async (req) => {
 
     const { data, error } = await supabase
       .from("coupons")
-      .select("id, code, discount_type, discount_value, max_discount_value, company_name, expiry_date, is_active, is_consumed, consumed_at, consumed_by_customer, consumed_by_mobile")
+      .select("id, code, discount_type, discount_value, max_discount_value, company_name, expiry_date, is_active, is_consumed, consumed_at, consumed_by_customer, consumed_by_mobile, branch_name")
       .eq("code", code.trim().toUpperCase())
       .maybeSingle();
 
@@ -63,6 +63,7 @@ Deno.serve(async (req) => {
           consumed_at: data.consumed_at,
           consumed_by_customer: data.consumed_by_customer,
           consumed_by_mobile: data.consumed_by_mobile,
+          branch_name: data.branch_name,
           is_expired: !!isExpired,
         },
       }),

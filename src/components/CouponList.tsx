@@ -24,6 +24,7 @@ interface Coupon {
   consumed_by_customer: string | null;
   consumed_by_mobile: string | null;
   consumed_at: string | null;
+  branch_name: string | null;
   created_at: string;
   batch_id: string | null;
 }
@@ -148,6 +149,7 @@ const CouponList = () => {
       [t("mobile")]: c.consumed_by_mobile || "-",
       [t("consumedAt")]: c.consumed_at ? new Date(c.consumed_at).toLocaleDateString() : "-",
       [t("status")]: c.is_consumed ? t("consumed") : c.is_active ? t("active") : t("inactive"),
+      [t("branch")]: c.branch_name || "-",
     }));
     const ws = XLSX.utils.json_to_sheet(wsData);
     ws["!cols"] = [{ wch: 5 }, { wch: 22 }, { wch: 14 }, { wch: 10 }, { wch: 14 }, { wch: 20 }, { wch: 30 }, { wch: 14 }, { wch: 20 }, { wch: 16 }, { wch: 14 }, { wch: 12 }];
@@ -275,6 +277,7 @@ const CouponList = () => {
                   <th className="px-4 py-3 text-start text-muted-foreground font-semibold">{t("consumedBy")}</th>
                   <th className="px-4 py-3 text-start text-muted-foreground font-semibold">{t("mobile")}</th>
                   <th className="px-4 py-3 text-start text-muted-foreground font-semibold">{t("consumedAt")}</th>
+                  <th className="px-4 py-3 text-start text-muted-foreground font-semibold">{t("branch")}</th>
                   <th className="px-4 py-3 text-start text-muted-foreground font-semibold">{t("status")}</th>
                   <th className="px-4 py-3 text-start text-muted-foreground font-semibold">{t("actions")}</th>
                 </tr>
@@ -299,6 +302,7 @@ const CouponList = () => {
                     <td className="px-4 py-3 text-foreground">{c.consumed_by_customer || "-"}</td>
                     <td className="px-4 py-3 text-foreground">{c.consumed_by_mobile || "-"}</td>
                     <td className="px-4 py-3 text-muted-foreground">{c.consumed_at ? new Date(c.consumed_at).toLocaleDateString() : "-"}</td>
+                    <td className="px-4 py-3 text-foreground">{c.branch_name || "-"}</td>
                     <td className="px-4 py-3">
                       {c.is_consumed ? (
                         <Badge variant="secondary">{t("consumed")}</Badge>
