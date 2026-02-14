@@ -2,12 +2,15 @@ import { useEffect, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { Badge } from "@/components/ui/badge";
 import { Loader2 } from "lucide-react";
+import { useLanguage } from "@/i18n/LanguageContext";
 
 interface Coupon {
   id: string;
   code: string;
   discount_type: string;
   discount_value: number;
+  max_discount_value: number | null;
+  customer_name: string | null;
   description: string | null;
   expiry_date: string | null;
   is_active: boolean;
@@ -18,6 +21,7 @@ interface Coupon {
 const CouponList = () => {
   const [coupons, setCoupons] = useState<Coupon[]>([]);
   const [loading, setLoading] = useState(true);
+  const { t } = useLanguage();
 
   useEffect(() => {
     const fetchCoupons = async () => {
@@ -42,8 +46,8 @@ const CouponList = () => {
   if (coupons.length === 0) {
     return (
       <div className="text-center py-20 text-muted-foreground">
-        <p className="text-lg">No coupons saved yet.</p>
-        <p className="text-sm mt-1">Generate and save coupons to see them here.</p>
+        <p className="text-lg">{t("noCoupons")}</p>
+        <p className="text-sm mt-1">{t("noCouponsHint")}</p>
       </div>
     );
   }
@@ -54,13 +58,15 @@ const CouponList = () => {
         <table className="w-full text-sm">
           <thead>
             <tr className="bg-secondary">
-              <th className="px-4 py-3 text-left text-muted-foreground font-semibold">#</th>
-              <th className="px-4 py-3 text-left text-muted-foreground font-semibold">Code</th>
-              <th className="px-4 py-3 text-left text-muted-foreground font-semibold">Type</th>
-              <th className="px-4 py-3 text-left text-muted-foreground font-semibold">Value</th>
-              <th className="px-4 py-3 text-left text-muted-foreground font-semibold">Description</th>
-              <th className="px-4 py-3 text-left text-muted-foreground font-semibold">Expiry</th>
-              <th className="px-4 py-3 text-left text-muted-foreground font-semibold">Status</th>
+              <th className="px-4 py-3 text-start text-muted-foreground font-semibold">#</th>
+              <th className="px-4 py-3 text-start text-muted-foreground font-semibold">{t("code")}</th>
+              <th className="px-4 py-3 text-start text-muted-foreground font-semibold">{t("type")}</th>
+              <th className="px-4 py-3 text-start text-muted-foreground font-semibold">{t("value")}</th>
+              <th className="px-4 py-3 text-start text-muted-foreground font-semibold">{t("maxValue")}</th>
+              <th className="px-4 py-3 text-start text-muted-foreground font-semibold">{t("customer")}</th>
+              <th className="px-4 py-3 text-start text-muted-foreground font-semibold">{t("description")}</th>
+              <th className="px-4 py-3 text-start text-muted-foreground font-semibold">{t("expiry")}</th>
+              <th className="px-4 py-3 text-start text-muted-foreground font-semibold">{t("status")}</th>
             </tr>
           </thead>
           <tbody>
@@ -68,13 +74,15 @@ const CouponList = () => {
               <tr key={c.id} className="border-t border-border hover:bg-secondary/50 transition-colors">
                 <td className="px-4 py-3 text-muted-foreground">{i + 1}</td>
                 <td className="px-4 py-3 font-mono text-primary font-semibold">{c.code}</td>
-                <td className="px-4 py-3 text-foreground">{c.discount_type === "percentage" ? "%" : "Fixed"}</td>
+                <td className="px-4 py-3 text-foreground">{c.discount_type === "percentage" ? "%" : t("fixedAmount")}</td>
                 <td className="px-4 py-3 text-foreground">{c.discount_value}{c.discount_type === "percentage" ? "%" : ""}</td>
+                <td className="px-4 py-3 text-foreground">{c.max_discount_value ?? t("noLimit")}</td>
+                <td className="px-4 py-3 text-foreground">{c.customer_name || "-"}</td>
                 <td className="px-4 py-3 text-muted-foreground">{c.description || "-"}</td>
                 <td className="px-4 py-3 text-muted-foreground">{c.expiry_date ? new Date(c.expiry_date).toLocaleDateString() : "-"}</td>
                 <td className="px-4 py-3">
                   <Badge variant={c.is_active ? "default" : "secondary"} className={c.is_active ? "gold-gradient-bg text-primary-foreground" : ""}>
-                    {c.is_active ? "Active" : "Inactive"}
+                    {c.is_active ? t("active") : t("inactive")}
                   </Badge>
                 </td>
               </tr>

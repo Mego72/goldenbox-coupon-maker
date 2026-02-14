@@ -20,36 +20,42 @@ export type Database = {
           code: string
           created_at: string
           created_by: string | null
+          customer_name: string | null
           description: string | null
           discount_type: string
           discount_value: number
           expiry_date: string | null
           id: string
           is_active: boolean
+          max_discount_value: number | null
         }
         Insert: {
           batch_id?: string | null
           code: string
           created_at?: string
           created_by?: string | null
+          customer_name?: string | null
           description?: string | null
           discount_type: string
           discount_value: number
           expiry_date?: string | null
           id?: string
           is_active?: boolean
+          max_discount_value?: number | null
         }
         Update: {
           batch_id?: string | null
           code?: string
           created_at?: string
           created_by?: string | null
+          customer_name?: string | null
           description?: string | null
           discount_type?: string
           discount_value?: number
           expiry_date?: string | null
           id?: string
           is_active?: boolean
+          max_discount_value?: number | null
         }
         Relationships: []
       }
