@@ -17,6 +17,7 @@ export type Database = {
       coupons: {
         Row: {
           batch_id: string | null
+          branch_name: string | null
           code: string
           company_name: string | null
           consumed_at: string | null
@@ -35,6 +36,7 @@ export type Database = {
         }
         Insert: {
           batch_id?: string | null
+          branch_name?: string | null
           code: string
           company_name?: string | null
           consumed_at?: string | null
@@ -53,6 +55,7 @@ export type Database = {
         }
         Update: {
           batch_id?: string | null
+          branch_name?: string | null
           code?: string
           company_name?: string | null
           consumed_at?: string | null

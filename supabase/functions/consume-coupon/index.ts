@@ -11,7 +11,7 @@ Deno.serve(async (req) => {
   }
 
   try {
-    const { code, customer_name, mobile_number } = await req.json();
+    const { code, customer_name, mobile_number, branch_name } = await req.json();
 
     if (!code || typeof code !== "string" || code.trim().length === 0) {
       return new Response(
@@ -30,6 +30,13 @@ Deno.serve(async (req) => {
     if (!mobile_number || typeof mobile_number !== "string") {
       return new Response(
         JSON.stringify({ error: "Mobile number is required" }),
+        { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+      );
+    }
+
+    if (!branch_name || typeof branch_name !== "string") {
+      return new Response(
+        JSON.stringify({ error: "Branch name is required" }),
         { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } }
       );
     }
@@ -90,6 +97,7 @@ Deno.serve(async (req) => {
         consumed_at: new Date().toISOString(),
         consumed_by_customer: customer_name.trim(),
         consumed_by_mobile: mobile_number.trim(),
+        branch_name: branch_name.trim(),
         is_active: false,
       })
       .eq("id", coupon.id);

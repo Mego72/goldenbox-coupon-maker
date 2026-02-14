@@ -1,0 +1,1 @@
+ALTER TABLE public.coupons ADD COLUMN branch_name text;
