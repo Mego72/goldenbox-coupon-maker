@@ -3,10 +3,11 @@ import { useNavigate } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Button } from "@/components/ui/button";
-import { LogOut, Sparkles, List, LayoutDashboard } from "lucide-react";
+import { LogOut, Sparkles, List, LayoutDashboard, FileCode } from "lucide-react";
 import CouponDashboard from "@/components/CouponDashboard";
 import CouponGenerator from "@/components/CouponGenerator";
 import CouponList from "@/components/CouponList";
+import ApiDocs from "@/components/ApiDocs";
 import LanguageSwitcher from "@/components/LanguageSwitcher";
 import { useLanguage } from "@/i18n/LanguageContext";
 import type { User } from "@supabase/supabase-js";
@@ -60,8 +61,11 @@ const Index = () => {
             <TabsTrigger value="generate" className="data-[state=active]:gold-gradient-bg data-[state=active]:text-primary-foreground">
               <Sparkles className="h-4 w-4 me-2" /> {t("generate")}
             </TabsTrigger>
-            <TabsTrigger value="saved" className="data-[state=active]:gold-gradient-bg data-[state=active]:text-primary-foreground">
+             <TabsTrigger value="saved" className="data-[state=active]:gold-gradient-bg data-[state=active]:text-primary-foreground">
               <List className="h-4 w-4 me-2" /> {t("savedCoupons")}
+            </TabsTrigger>
+            <TabsTrigger value="api-docs" className="data-[state=active]:gold-gradient-bg data-[state=active]:text-primary-foreground">
+              <FileCode className="h-4 w-4 me-2" /> {t("apiDocs")}
             </TabsTrigger>
           </TabsList>
           <TabsContent value="dashboard">
@@ -72,6 +76,9 @@ const Index = () => {
           </TabsContent>
           <TabsContent value="saved">
             <CouponList />
+          </TabsContent>
+          <TabsContent value="api-docs">
+            <ApiDocs />
           </TabsContent>
         </Tabs>
       </main>
