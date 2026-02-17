@@ -5,7 +5,9 @@ import { Input } from "@/components/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Button } from "@/components/ui/button";
 import { Checkbox } from "@/components/ui/checkbox";
-import { Loader2, Search, X, Power, Trash2, Download } from "lucide-react";
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
+import { Label } from "@/components/ui/label";
+import { Loader2, Search, X, Power, Trash2, Download, Pencil, RotateCcw } from "lucide-react";
 import { useLanguage } from "@/i18n/LanguageContext";
 import { toast } from "sonner";
 import * as XLSX from "xlsx";
@@ -40,8 +42,10 @@ const CouponList = () => {
   const [dateTo, setDateTo] = useState("");
   const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
   const [deleting, setDeleting] = useState(false);
+  const [editCoupon, setEditCoupon] = useState<Coupon | null>(null);
+  const [editForm, setEditForm] = useState<Partial<Coupon>>({});
+  const [saving, setSaving] = useState(false);
   const { t } = useLanguage();
-
 
   useEffect(() => {
     const fetchCoupons = async () => {
@@ -65,7 +69,6 @@ const CouponList = () => {
       if (statusFilter === "consumed" && !c.is_consumed) return false;
       if (statusFilter === "inactive" && (c.is_active || c.is_consumed)) return false;
       if (branchFilter !== "all" && c.branch_name !== branchFilter) return false;
-      if (statusFilter === "inactive" && (c.is_active || c.is_consumed)) return false;
       if (dateFrom && c.created_at < dateFrom) return false;
       if (dateTo && c.created_at > dateTo + "T23:59:59") return false;
       return true;
@@ -139,6 +142,69 @@ const CouponList = () => {
       toast.success(t("couponsDeleted", { count }));
     }
     setDeleting(false);
+  };
+
+  const handleReset = async (coupon: Coupon) => {
+    if (!confirm(t("confirmReset"))) return;
+    const { error } = await supabase
+      .from("coupons")
+      .update({
+        is_consumed: false,
+        consumed_by_customer: null,
+        consumed_by_mobile: null,
+        consumed_at: null,
+        branch_name: null,
+        is_active: true,
+      })
+      .eq("id", coupon.id);
+    if (error) {
+      toast.error(t("actionFailed"));
+    } else {
+      setCoupons((prev) =>
+        prev.map((c) =>
+          c.id === coupon.id
+            ? { ...c, is_consumed: false, consumed_by_customer: null, consumed_by_mobile: null, consumed_at: null, branch_name: null, is_active: true }
+            : c
+        )
+      );
+      toast.success(t("couponReset"));
+    }
+  };
+
+  const openEdit = (coupon: Coupon) => {
+    setEditCoupon(coupon);
+    setEditForm({
+      discount_type: coupon.discount_type,
+      discount_value: coupon.discount_value,
+      max_discount_value: coupon.max_discount_value,
+      company_name: coupon.company_name,
+      description: coupon.description,
+      expiry_date: coupon.expiry_date ? coupon.expiry_date.slice(0, 10) : "",
+    });
+  };
+
+  const handleSaveEdit = async () => {
+    if (!editCoupon) return;
+    setSaving(true);
+    const updates: Record<string, unknown> = {
+      discount_type: editForm.discount_type,
+      discount_value: Number(editForm.discount_value),
+      max_discount_value: editForm.max_discount_value ? Number(editForm.max_discount_value) : null,
+      company_name: editForm.company_name || null,
+      description: editForm.description || null,
+      expiry_date: editForm.expiry_date || null,
+    };
+    const { error } = await supabase.from("coupons").update(updates).eq("id", editCoupon.id);
+    if (error) {
+      toast.error(t("actionFailed"));
+    } else {
+      setCoupons((prev) =>
+        prev.map((c) => (c.id === editCoupon.id ? { ...c, ...updates } as Coupon : c))
+      );
+      toast.success(t("couponUpdated"));
+      setEditCoupon(null);
+    }
+    setSaving(false);
   };
 
   const handleExportExcel = () => {
@@ -330,26 +396,46 @@ const CouponList = () => {
                       )}
                     </td>
                     <td className="px-4 py-3">
-                      <div className="flex items-center gap-2">
+                      <div className="flex items-center gap-1">
+                        <Button
+                          variant="ghost"
+                          size="icon"
+                          onClick={() => openEdit(c)}
+                          className="text-muted-foreground hover:text-primary"
+                          title={t("editCoupon")}
+                        >
+                          <Pencil className="h-4 w-4" />
+                        </Button>
+                        {c.is_consumed && (
+                          <Button
+                            variant="ghost"
+                            size="icon"
+                            onClick={() => handleReset(c)}
+                            className="text-blue-500 hover:text-blue-400"
+                            title={t("resetCoupon")}
+                          >
+                            <RotateCcw className="h-4 w-4" />
+                          </Button>
+                        )}
                         {!c.is_consumed && (
                           <Button
                             variant="ghost"
-                            size="sm"
+                            size="icon"
                             onClick={() => handleToggleActive(c)}
                             className={c.is_active ? "text-yellow-500 hover:text-yellow-400" : "text-green-500 hover:text-green-400"}
+                            title={c.is_active ? t("deactivate") : t("activate")}
                           >
-                            <Power className="h-4 w-4 me-1" />
-                            {c.is_active ? t("deactivate") : t("activate")}
+                            <Power className="h-4 w-4" />
                           </Button>
                         )}
                         <Button
                           variant="ghost"
-                          size="sm"
+                          size="icon"
                           onClick={() => handleDelete(c)}
                           className="text-destructive hover:text-destructive/80"
+                          title={t("deleteCoupon")}
                         >
-                          <Trash2 className="h-4 w-4 me-1" />
-                          {t("deleteCoupon")}
+                          <Trash2 className="h-4 w-4" />
                         </Button>
                       </div>
                     </td>
@@ -360,6 +446,84 @@ const CouponList = () => {
           </div>
         </div>
       )}
+
+      {/* Edit Dialog */}
+      <Dialog open={!!editCoupon} onOpenChange={(open) => !open && setEditCoupon(null)}>
+        <DialogContent className="bg-background border-border">
+          <DialogHeader>
+            <DialogTitle className="text-foreground">{t("editCoupon")} — {editCoupon?.code}</DialogTitle>
+          </DialogHeader>
+          <div className="grid gap-4 py-4">
+            <div className="grid grid-cols-2 gap-4">
+              <div className="space-y-2">
+                <Label>{t("discountType")}</Label>
+                <Select value={editForm.discount_type} onValueChange={(v) => setEditForm((f) => ({ ...f, discount_type: v }))}>
+                  <SelectTrigger className="bg-secondary border-border">
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent className="bg-popover border-border z-50">
+                    <SelectItem value="percentage">{t("percentage")}</SelectItem>
+                    <SelectItem value="fixed">{t("fixedAmount")}</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+              <div className="space-y-2">
+                <Label>{t("discountValue")}</Label>
+                <Input
+                  type="number"
+                  value={editForm.discount_value ?? ""}
+                  onChange={(e) => setEditForm((f) => ({ ...f, discount_value: Number(e.target.value) }))}
+                  className="bg-secondary border-border"
+                />
+              </div>
+            </div>
+            <div className="grid grid-cols-2 gap-4">
+              <div className="space-y-2">
+                <Label>{t("maxDiscountValue")}</Label>
+                <Input
+                  type="number"
+                  value={editForm.max_discount_value ?? ""}
+                  onChange={(e) => setEditForm((f) => ({ ...f, max_discount_value: e.target.value ? Number(e.target.value) : null }))}
+                  className="bg-secondary border-border"
+                  placeholder={t("noLimit")}
+                />
+              </div>
+              <div className="space-y-2">
+                <Label>{t("expiryDate")}</Label>
+                <Input
+                  type="date"
+                  value={typeof editForm.expiry_date === "string" ? editForm.expiry_date : ""}
+                  onChange={(e) => setEditForm((f) => ({ ...f, expiry_date: e.target.value || null }))}
+                  className="bg-secondary border-border"
+                />
+              </div>
+            </div>
+            <div className="space-y-2">
+              <Label>{t("companyName")}</Label>
+              <Input
+                value={editForm.company_name ?? ""}
+                onChange={(e) => setEditForm((f) => ({ ...f, company_name: e.target.value }))}
+                className="bg-secondary border-border"
+              />
+            </div>
+            <div className="space-y-2">
+              <Label>{t("description")}</Label>
+              <Input
+                value={editForm.description ?? ""}
+                onChange={(e) => setEditForm((f) => ({ ...f, description: e.target.value }))}
+                className="bg-secondary border-border"
+              />
+            </div>
+          </div>
+          <DialogFooter>
+            <Button variant="ghost" onClick={() => setEditCoupon(null)}>{t("cancel")}</Button>
+            <Button onClick={handleSaveEdit} disabled={saving} className="gold-gradient-bg text-primary-foreground">
+              {saving ? <Loader2 className="h-4 w-4 me-1 animate-spin" /> : null}
+              {t("save")}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 };
