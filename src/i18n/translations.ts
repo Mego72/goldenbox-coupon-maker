@@ -115,6 +115,13 @@ export const translations = {
     error404: "الكوبون غير موجود",
     error409: "الكوبون مستهلك بالفعل",
     error500: "خطأ في قاعدة البيانات",
+    editCoupon: "تعديل الكوبون",
+    resetCoupon: "إعادة تعيين",
+    confirmReset: "هل أنت متأكد من إعادة تعيين هذا الكوبون؟ سيتم مسح بيانات الاستهلاك.",
+    couponReset: "تم إعادة تعيين الكوبون",
+    couponUpdated: "تم تحديث الكوبون",
+    save: "حفظ",
+    cancel: "إلغاء",
   },
   en: {
     appName: "GoldenBox Discount Coupons",
@@ -230,6 +237,13 @@ export const translations = {
     error404: "Coupon not found",
     error409: "Coupon already consumed",
     error500: "Database error",
+    editCoupon: "Edit Coupon",
+    resetCoupon: "Reset",
+    confirmReset: "Are you sure you want to reset this coupon? Consumption data will be cleared.",
+    couponReset: "Coupon reset successfully",
+    couponUpdated: "Coupon updated successfully",
+    save: "Save",
+    cancel: "Cancel",
   },
 } as const;
 
