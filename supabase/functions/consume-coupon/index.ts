@@ -5,7 +5,7 @@ const corsHeaders = {
   "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type",
 };
 
-const VALID_BRANCHES = ["مدينتي", "ذايد", "أجورة", "القرية", "الشروق"];
+
 
 Deno.serve(async (req) => {
   if (req.method === "OPTIONS") {
@@ -36,9 +36,9 @@ Deno.serve(async (req) => {
       );
     }
 
-    if (!branch_name || typeof branch_name !== "string" || !VALID_BRANCHES.includes(branch_name.trim())) {
+    if (!branch_name || typeof branch_name !== "string" || branch_name.trim().length === 0) {
       return new Response(
-        JSON.stringify({ error: "Invalid branch name. Valid branches: " + VALID_BRANCHES.join(", ") }),
+        JSON.stringify({ error: "Branch name is required" }),
         { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } }
       );
     }
