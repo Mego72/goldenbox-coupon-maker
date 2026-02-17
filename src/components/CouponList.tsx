@@ -355,19 +355,17 @@ const CouponList = () => {
                   <th className="px-4 py-3 text-start text-muted-foreground font-semibold">{t("value")}</th>
                   <th className="px-4 py-3 text-start text-muted-foreground font-semibold">{t("maxValue")}</th>
                   <th className="px-4 py-3 text-start text-muted-foreground font-semibold">{t("company")}</th>
-                  <th className="px-4 py-3 text-start text-muted-foreground font-semibold">{t("description")}</th>
                   <th className="px-4 py-3 text-start text-muted-foreground font-semibold">{t("expiry")}</th>
                   <th className="px-4 py-3 text-start text-muted-foreground font-semibold">{t("consumedBy")}</th>
                   <th className="px-4 py-3 text-start text-muted-foreground font-semibold">{t("mobile")}</th>
-                  <th className="px-4 py-3 text-start text-muted-foreground font-semibold">{t("consumedAt")}</th>
                   <th className="px-4 py-3 text-start text-muted-foreground font-semibold">{t("branch")}</th>
                   <th className="px-4 py-3 text-start text-muted-foreground font-semibold">{t("status")}</th>
-                  <th className="px-4 py-3 text-start text-muted-foreground font-semibold">{t("actions")}</th>
+                  <th className="px-4 py-3 text-start text-muted-foreground font-semibold sticky end-0 bg-secondary z-10">{t("actions")}</th>
                 </tr>
               </thead>
               <tbody>
                 {filteredCoupons.map((c, i) => (
-                  <tr key={c.id} className={`border-t border-border transition-colors ${selectedIds.has(c.id) ? "bg-primary/5" : "hover:bg-secondary/50"}`}>
+                  <tr key={c.id} className={`border-t border-border transition-colors ${selectedIds.has(c.id) ? "bg-primary/5" : "bg-background hover:bg-secondary/50"}`}>
                     <td className="px-4 py-3">
                       <Checkbox
                         checked={selectedIds.has(c.id)}
@@ -380,11 +378,9 @@ const CouponList = () => {
                     <td className="px-4 py-3 text-foreground">{c.discount_value}{c.discount_type === "percentage" ? "%" : ""}</td>
                     <td className="px-4 py-3 text-foreground">{c.max_discount_value ?? t("noLimit")}</td>
                     <td className="px-4 py-3 text-foreground">{c.company_name || "-"}</td>
-                    <td className="px-4 py-3 text-muted-foreground">{c.description || "-"}</td>
                     <td className="px-4 py-3 text-muted-foreground">{c.expiry_date ? new Date(c.expiry_date).toLocaleDateString() : "-"}</td>
                     <td className="px-4 py-3 text-foreground">{c.consumed_by_customer || "-"}</td>
                     <td className="px-4 py-3 text-foreground">{c.consumed_by_mobile || "-"}</td>
-                    <td className="px-4 py-3 text-muted-foreground">{c.consumed_at ? new Date(c.consumed_at).toLocaleDateString() : "-"}</td>
                     <td className="px-4 py-3 text-foreground">{c.branch_name || "-"}</td>
                     <td className="px-4 py-3">
                       {c.is_consumed ? (
@@ -395,7 +391,7 @@ const CouponList = () => {
                         </Badge>
                       )}
                     </td>
-                    <td className="px-4 py-3">
+                    <td className="px-4 py-3 sticky end-0 z-10 bg-inherit">
                       <div className="flex items-center gap-1">
                         <Button
                           variant="ghost"
