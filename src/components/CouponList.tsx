@@ -48,15 +48,32 @@ const CouponList = () => {
   const { t } = useLanguage();
 
   useEffect(() => {
-    const fetchCoupons = async () => {
-      const { data, error } = await supabase
-        .from("coupons")
-        .select("*")
-        .order("created_at", { ascending: false });
-      if (!error && data) setCoupons(data);
+    const fetchAllCoupons = async () => {
+      let allData: Coupon[] = [];
+      let from = 0;
+      const pageSize = 1000;
+      let hasMore = true;
+
+      while (hasMore) {
+        const { data, error } = await supabase
+          .from("coupons")
+          .select("*")
+          .order("created_at", { ascending: false })
+          .range(from, from + pageSize - 1);
+
+        if (error || !data) {
+          hasMore = false;
+        } else {
+          allData = [...allData, ...data];
+          hasMore = data.length === pageSize;
+          from += pageSize;
+        }
+      }
+
+      setCoupons(allData);
       setLoading(false);
     };
-    fetchCoupons();
+    fetchAllCoupons();
   }, []);
 
   const filteredCoupons = useMemo(() => {
