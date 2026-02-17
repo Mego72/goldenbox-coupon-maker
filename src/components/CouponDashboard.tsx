@@ -23,14 +23,28 @@ const CouponDashboard = () => {
   const { t } = useLanguage();
 
   useEffect(() => {
-    const fetch = async () => {
-      const { data } = await supabase
-        .from("coupons")
-        .select("id, is_active, is_consumed, consumed_at, company_name, branch_name, created_at");
-      if (data) setCoupons(data);
+    const fetchAll = async () => {
+      let allData: Coupon[] = [];
+      let from = 0;
+      const pageSize = 1000;
+      let hasMore = true;
+      while (hasMore) {
+        const { data, error } = await supabase
+          .from("coupons")
+          .select("id, is_active, is_consumed, consumed_at, company_name, branch_name, created_at")
+          .range(from, from + pageSize - 1);
+        if (error || !data) {
+          hasMore = false;
+        } else {
+          allData = [...allData, ...data];
+          hasMore = data.length === pageSize;
+          from += pageSize;
+        }
+      }
+      setCoupons(allData);
       setLoading(false);
     };
-    fetch();
+    fetchAll();
   }, []);
 
   const stats = useMemo(() => {
