@@ -52,7 +52,7 @@ const Index = () => {
           </Button>
         </div>
       </header>
-      <main className="max-w-6xl mx-auto px-6 py-8">
+      <main className="w-full max-w-[1600px] mx-auto px-6 py-8">
         <Tabs defaultValue="dashboard" className="space-y-6">
           <TabsList className="bg-secondary">
             <TabsTrigger value="dashboard" className="data-[state=active]:gold-gradient-bg data-[state=active]:text-primary-foreground">
