@@ -7,11 +7,13 @@ import { Button } from "@/components/ui/button";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
 import { Label } from "@/components/ui/label";
-import { Loader2, Search, X, Power, Trash2, Download, Pencil, RotateCcw } from "lucide-react";
+import { Loader2, Search, X, Power, Trash2, Download, Pencil, RotateCcw, ChevronLeft, ChevronRight } from "lucide-react";
 import { useLanguage } from "@/i18n/LanguageContext";
 import { toast } from "sonner";
 import * as XLSX from "xlsx";
 import { BRANCHES } from "@/constants/branches";
+
+const PAGE_SIZE = 50;
 
 interface Coupon {
   id: string;
@@ -45,6 +47,7 @@ const CouponList = () => {
   const [editCoupon, setEditCoupon] = useState<Coupon | null>(null);
   const [editForm, setEditForm] = useState<Partial<Coupon>>({});
   const [saving, setSaving] = useState(false);
+  const [currentPage, setCurrentPage] = useState(1);
   const { t } = useLanguage();
 
   useEffect(() => {
@@ -91,6 +94,17 @@ const CouponList = () => {
       return true;
     });
   }, [coupons, search, statusFilter, branchFilter, dateFrom, dateTo]);
+
+  // Reset page when filters change
+  useEffect(() => {
+    setCurrentPage(1);
+  }, [search, statusFilter, branchFilter, dateFrom, dateTo]);
+
+  const totalPages = Math.ceil(filteredCoupons.length / PAGE_SIZE);
+  const paginatedCoupons = useMemo(() => {
+    const start = (currentPage - 1) * PAGE_SIZE;
+    return filteredCoupons.slice(start, start + PAGE_SIZE);
+  }, [filteredCoupons, currentPage]);
 
   const hasFilters = search || statusFilter !== "all" || branchFilter !== "all" || dateFrom || dateTo;
 
@@ -320,11 +334,9 @@ const CouponList = () => {
 
       <div className="flex items-center justify-between flex-wrap gap-2">
         <div className="flex items-center gap-3">
-          {hasFilters && (
-            <span className="text-sm text-muted-foreground">
-              {filteredCoupons.length} / {coupons.length}
-            </span>
-          )}
+          <span className="text-sm font-medium text-foreground">
+            {filteredCoupons.length} {hasFilters ? `/ ${coupons.length}` : ""} {t("totalCoupons")}
+          </span>
           {hasFilters && (
             <Button variant="ghost" size="sm" onClick={clearFilters} className="text-muted-foreground hover:text-foreground">
               <X className="me-1 h-4 w-4" /> {t("clearFilters")}
@@ -354,6 +366,7 @@ const CouponList = () => {
           <p>{t("noResults")}</p>
         </div>
       ) : (
+        <div className="space-y-3">
         <div className="rounded-xl border border-border overflow-hidden">
           <div className="overflow-x-auto">
             <table className="w-full text-sm">
@@ -381,7 +394,7 @@ const CouponList = () => {
                 </tr>
               </thead>
               <tbody>
-                {filteredCoupons.map((c, i) => (
+                {paginatedCoupons.map((c, i) => (
                   <tr key={c.id} className={`border-t border-border transition-colors ${selectedIds.has(c.id) ? "bg-primary/5" : "bg-background hover:bg-secondary/50"}`}>
                     <td className="px-4 py-3">
                       <Checkbox
@@ -389,7 +402,7 @@ const CouponList = () => {
                         onCheckedChange={() => toggleSelect(c.id)}
                       />
                     </td>
-                    <td className="px-4 py-3 text-muted-foreground">{i + 1}</td>
+                    <td className="px-4 py-3 text-muted-foreground">{(currentPage - 1) * PAGE_SIZE + i + 1}</td>
                     <td className="px-4 py-3 font-mono text-primary font-semibold">{c.code}</td>
                     <td className="px-4 py-3 text-foreground">{c.discount_type === "percentage" ? "%" : t("fixedAmount")}</td>
                     <td className="px-4 py-3 text-foreground">{c.discount_value}{c.discount_type === "percentage" ? "%" : ""}</td>
@@ -457,6 +470,59 @@ const CouponList = () => {
               </tbody>
             </table>
           </div>
+        </div>
+
+        {/* Pagination */}
+        {totalPages > 1 && (
+          <div className="flex items-center justify-between px-2 pt-2">
+            <span className="text-sm text-muted-foreground">
+              {(currentPage - 1) * PAGE_SIZE + 1}–{Math.min(currentPage * PAGE_SIZE, filteredCoupons.length)} / {filteredCoupons.length}
+            </span>
+            <div className="flex items-center gap-1">
+              <Button
+                variant="outline"
+                size="icon"
+                onClick={() => setCurrentPage((p) => Math.max(1, p - 1))}
+                disabled={currentPage === 1}
+                className="h-8 w-8"
+              >
+                <ChevronLeft className="h-4 w-4" />
+              </Button>
+              {Array.from({ length: Math.min(totalPages, 7) }, (_, i) => {
+                let page: number;
+                if (totalPages <= 7) {
+                  page = i + 1;
+                } else if (currentPage <= 4) {
+                  page = i + 1;
+                } else if (currentPage >= totalPages - 3) {
+                  page = totalPages - 6 + i;
+                } else {
+                  page = currentPage - 3 + i;
+                }
+                return (
+                  <Button
+                    key={page}
+                    variant={page === currentPage ? "default" : "outline"}
+                    size="icon"
+                    onClick={() => setCurrentPage(page)}
+                    className={`h-8 w-8 ${page === currentPage ? "gold-gradient-bg text-primary-foreground" : ""}`}
+                  >
+                    {page}
+                  </Button>
+                );
+              })}
+              <Button
+                variant="outline"
+                size="icon"
+                onClick={() => setCurrentPage((p) => Math.min(totalPages, p + 1))}
+                disabled={currentPage === totalPages}
+                className="h-8 w-8"
+              >
+                <ChevronRight className="h-4 w-4" />
+              </Button>
+            </div>
+          </div>
+        )}
         </div>
       )}
 
