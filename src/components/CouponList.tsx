@@ -7,7 +7,7 @@ import { Button } from "@/components/ui/button";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
 import { Label } from "@/components/ui/label";
-import { Loader2, Search, X, Power, Trash2, Download, Pencil, RotateCcw, ChevronLeft, ChevronRight } from "lucide-react";
+import { Loader2, Search, X, Power, Trash2, Download, Pencil, RotateCcw, ChevronLeft, ChevronRight, RefreshCw } from "lucide-react";
 import { useLanguage } from "@/i18n/LanguageContext";
 import { toast } from "sonner";
 import * as XLSX from "xlsx";
@@ -50,32 +50,34 @@ const CouponList = () => {
   const [currentPage, setCurrentPage] = useState(1);
   const { t } = useLanguage();
 
-  useEffect(() => {
-    const fetchAllCoupons = async () => {
-      let allData: Coupon[] = [];
-      let from = 0;
-      const pageSize = 1000;
-      let hasMore = true;
+  const fetchAllCoupons = async () => {
+    setLoading(true);
+    let allData: Coupon[] = [];
+    let from = 0;
+    const pageSize = 1000;
+    let hasMore = true;
 
-      while (hasMore) {
-        const { data, error } = await supabase
-          .from("coupons")
-          .select("*")
-          .order("created_at", { ascending: false })
-          .range(from, from + pageSize - 1);
+    while (hasMore) {
+      const { data, error } = await supabase
+        .from("coupons")
+        .select("*")
+        .order("created_at", { ascending: false })
+        .range(from, from + pageSize - 1);
 
-        if (error || !data) {
-          hasMore = false;
-        } else {
-          allData = [...allData, ...data];
-          hasMore = data.length === pageSize;
-          from += pageSize;
-        }
+      if (error || !data) {
+        hasMore = false;
+      } else {
+        allData = [...allData, ...data];
+        hasMore = data.length === pageSize;
+        from += pageSize;
       }
+    }
 
-      setCoupons(allData);
-      setLoading(false);
-    };
+    setCoupons(allData);
+    setLoading(false);
+  };
+
+  useEffect(() => {
     fetchAllCoupons();
   }, []);
 
@@ -354,11 +356,16 @@ const CouponList = () => {
             </Button>
           )}
         </div>
-        {filteredCoupons.length > 0 && (
-          <Button onClick={handleExportExcel} variant="outline" className="gold-border text-primary hover:bg-primary/10">
-            <Download className="me-2 h-4 w-4" /> {t("exportFiltered")}
+        <div className="flex items-center gap-2">
+          <Button onClick={fetchAllCoupons} variant="outline" size="sm" disabled={loading} className="text-muted-foreground hover:text-foreground">
+            <RefreshCw className={`h-4 w-4 me-1 ${loading ? "animate-spin" : ""}`} /> {t("refresh") || "Refresh"}
           </Button>
-        )}
+          {filteredCoupons.length > 0 && (
+            <Button onClick={handleExportExcel} variant="outline" className="gold-border text-primary hover:bg-primary/10">
+              <Download className="me-2 h-4 w-4" /> {t("exportFiltered")}
+            </Button>
+          )}
+        </div>
       </div>
 
       {filteredCoupons.length === 0 ? (
