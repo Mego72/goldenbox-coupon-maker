@@ -1,5 +1,4 @@
-import { useRef } from "react";
-import { Badge } from "@/components/ui/badge";
+import { useRef, useMemo } from "react";
 import { Button } from "@/components/ui/button";
 import { useLanguage } from "@/i18n/LanguageContext";
 import { toast } from "sonner";
@@ -36,41 +35,64 @@ const ConsumptionReport = ({ coupons, onBack }: ConsumptionReportProps) => {
 
   const consumedCoupons = coupons.filter((c) => c.is_consumed);
 
+  const companyName = consumedCoupons[0]?.company_name || "-";
+
+  const invoiceNumber = useMemo(() => {
+    const date = new Date();
+    return `INV-${date.getFullYear()}${String(date.getMonth() + 1).padStart(2, "0")}${String(date.getDate()).padStart(2, "0")}-${Math.random().toString(36).substring(2, 6).toUpperCase()}`;
+  }, []);
+
   const sumMaxValue = consumedCoupons.reduce(
     (sum, c) => sum + (c.max_discount_value ?? 0),
     0
   );
 
-  const sumDiscountValue = consumedCoupons.reduce(
-    (sum, c) => sum + c.discount_value,
-    0
-  );
+  const dateRange = useMemo(() => {
+    if (consumedCoupons.length === 0) return { from: "-", to: "-" };
+    const dates = consumedCoupons
+      .map((c) => c.consumed_at ? new Date(c.consumed_at).getTime() : 0)
+      .filter(Boolean);
+    if (dates.length === 0) return { from: "-", to: "-" };
+    return {
+      from: new Date(Math.min(...dates)).toLocaleDateString(),
+      to: new Date(Math.max(...dates)).toLocaleDateString(),
+    };
+  }, [consumedCoupons]);
 
   const handlePrint = () => {
     const printContent = reportRef.current;
     if (!printContent) return;
-
     const printWindow = window.open("", "_blank");
     if (!printWindow) return;
 
     printWindow.document.write(`
       <html dir="${dir}">
         <head>
-          <title>${t("consumptionReport")}</title>
+          <title>${t("proformaInvoice")}</title>
           <style>
+            @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Noto+Sans+Arabic:wght@300;400;500;600;700&display=swap');
             * { margin: 0; padding: 0; box-sizing: border-box; }
-            body { font-family: 'Segoe UI', Tahoma, sans-serif; padding: 20px; color: #1a1a1a; }
-            h2 { text-align: center; margin-bottom: 4px; font-size: 20px; }
-            .subtitle { text-align: center; color: #666; font-size: 13px; margin-bottom: 16px; }
-            table { width: 100%; border-collapse: collapse; font-size: 11px; margin-bottom: 16px; }
-            th, td { border: 1px solid #ccc; padding: 6px 8px; text-align: ${dir === "rtl" ? "right" : "left"}; }
-            th { background: #f5f5f5; font-weight: 600; }
-            .totals { margin-top: 12px; font-size: 14px; }
-            .totals div { margin-bottom: 6px; padding: 6px 10px; background: #f9f9f9; border: 1px solid #ddd; border-radius: 4px; display: flex; justify-content: space-between; }
-            .totals strong { color: #333; }
+            body { font-family: 'Inter', 'Noto Sans Arabic', sans-serif; padding: 32px; color: #1a1a1a; background: #fff; }
+            .invoice-container { max-width: 800px; margin: 0 auto; }
+            .invoice-header { display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 32px; padding-bottom: 20px; border-bottom: 3px solid #b8860b; }
+            .invoice-title { font-size: 28px; font-weight: 700; color: #b8860b; letter-spacing: 1px; }
+            .invoice-meta { font-size: 12px; color: #555; line-height: 1.8; }
+            .invoice-meta strong { color: #333; }
+            .bill-to { background: #faf6ef; border: 1px solid #e8dcc8; border-radius: 8px; padding: 16px; margin-bottom: 24px; }
+            .bill-to-label { font-size: 11px; text-transform: uppercase; color: #888; letter-spacing: 1px; margin-bottom: 4px; }
+            .bill-to-name { font-size: 18px; font-weight: 600; color: #333; }
+            .period { font-size: 12px; color: #666; margin-bottom: 20px; }
+            table { width: 100%; border-collapse: collapse; font-size: 11px; margin-bottom: 24px; }
+            thead th { background: #b8860b; color: #fff; padding: 10px 12px; text-align: ${dir === "rtl" ? "right" : "left"}; font-weight: 600; font-size: 11px; text-transform: uppercase; letter-spacing: 0.5px; }
+            tbody td { padding: 8px 12px; border-bottom: 1px solid #eee; color: #444; }
+            tbody tr:nth-child(even) { background: #fdfaf5; }
+            .totals-section { border-top: 2px solid #b8860b; padding-top: 16px; }
+            .total-row { display: flex; justify-content: space-between; padding: 8px 12px; font-size: 13px; }
+            .total-row.grand { background: #b8860b; color: #fff; font-size: 16px; font-weight: 700; border-radius: 6px; margin-top: 8px; padding: 12px 16px; }
+            .footer-note { margin-top: 32px; padding-top: 16px; border-top: 1px solid #ddd; font-size: 11px; color: #888; text-align: center; }
             @media print {
               body { padding: 0; }
-              @page { margin: 10mm; }
+              @page { margin: 12mm; }
             }
           </style>
         </head>
@@ -89,41 +111,33 @@ const ConsumptionReport = ({ coupons, onBack }: ConsumptionReportProps) => {
 
   const handleExportExcel = () => {
     const wsData = consumedCoupons.map((c, i) => ({
-      "#": i + 1,
+      [t("itemNo")]: i + 1,
       [t("code")]: c.code,
-      [t("company")]: c.company_name || "-",
-      [t("type")]: c.discount_type === "percentage" ? t("percentage") : t("fixedAmount"),
-      [t("discountValueCol")]: c.discount_value,
-      [t("maxValue")]: c.max_discount_value ?? t("noLimit"),
       [t("consumedBy")]: c.consumed_by_customer || "-",
       [t("mobile")]: c.consumed_by_mobile || "-",
       [t("branch")]: c.branch_name || "-",
       [t("consumedAt")]: c.consumed_at ? new Date(c.consumed_at).toLocaleDateString() : "-",
+      [t("maxValue")]: c.max_discount_value ?? 0,
     }));
 
-    // Add totals row
     wsData.push({
-      "#": "",
+      [t("itemNo")]: "" as any,
       [t("code")]: "",
-      [t("company")]: "",
-      [t("type")]: "",
-      [t("discountValueCol")]: sumDiscountValue as any,
-      [t("maxValue")]: sumMaxValue as any,
       [t("consumedBy")]: "",
       [t("mobile")]: "",
-      [t("branch")]: t("consumedCount") + ": " + consumedCoupons.length,
-      [t("consumedAt")]: "",
-    } as any);
+      [t("branch")]: "",
+      [t("consumedAt")]: t("totalDue"),
+      [t("maxValue")]: sumMaxValue as any,
+    });
 
     const ws = XLSX.utils.json_to_sheet(wsData);
     ws["!cols"] = [
-      { wch: 5 }, { wch: 22 }, { wch: 20 }, { wch: 14 },
-      { wch: 14 }, { wch: 14 }, { wch: 20 }, { wch: 16 },
-      { wch: 16 }, { wch: 14 },
+      { wch: 5 }, { wch: 22 }, { wch: 20 }, { wch: 16 },
+      { wch: 16 }, { wch: 14 }, { wch: 14 },
     ];
     const wb = XLSX.utils.book_new();
-    XLSX.utils.book_append_sheet(wb, ws, "Consumption Report");
-    XLSX.writeFile(wb, `Consumption_Report_${new Date().toISOString().slice(0, 10)}.xlsx`);
+    XLSX.utils.book_append_sheet(wb, ws, "Proforma Invoice");
+    XLSX.writeFile(wb, `Proforma_Invoice_${companyName}_${new Date().toISOString().slice(0, 10)}.xlsx`);
     toast.success(t("excelDownloaded"));
   };
 
@@ -144,65 +158,88 @@ const ConsumptionReport = ({ coupons, onBack }: ConsumptionReportProps) => {
         </div>
       </div>
 
-      {/* Report Content */}
-      <div ref={reportRef} className="rounded-xl border border-border bg-card p-6 space-y-4">
-        <h2 className="text-xl font-bold text-center text-foreground">{t("consumptionReport")}</h2>
-        <p className="text-center text-sm text-muted-foreground">
-          {t("reportDate")}: {new Date().toLocaleDateString()} — {t("consumedCount")}: {consumedCoupons.length}
-        </p>
+      {/* Invoice Content */}
+      <div ref={reportRef} className="invoice-container rounded-xl border border-border bg-card p-8 space-y-6 max-w-[850px] mx-auto">
+        {/* Header */}
+        <div className="flex justify-between items-start border-b-2 border-primary pb-5">
+          <div>
+            <h1 className="text-2xl font-bold text-primary tracking-wide">{t("proformaInvoice")}</h1>
+            <p className="text-xs text-muted-foreground mt-1">{t("couponUsageCharges")}</p>
+          </div>
+          <div className="text-end text-xs text-muted-foreground space-y-1">
+            <div><span className="font-semibold text-foreground">{t("invoiceNumber")}:</span> {invoiceNumber}</div>
+            <div><span className="font-semibold text-foreground">{t("invoiceDate")}:</span> {new Date().toLocaleDateString()}</div>
+            <div><span className="font-semibold text-foreground">{t("consumedCount")}:</span> {consumedCoupons.length}</div>
+          </div>
+        </div>
+
+        {/* Bill To */}
+        <div className="bg-secondary/50 border border-border rounded-lg p-4">
+          <p className="text-[10px] uppercase tracking-widest text-muted-foreground mb-1">{t("billTo")}</p>
+          <p className="text-lg font-semibold text-foreground">{companyName}</p>
+          <p className="text-xs text-muted-foreground mt-1">
+            {t("periodFrom")}: {dateRange.from} — {t("periodTo")}: {dateRange.to}
+          </p>
+        </div>
 
         {consumedCoupons.length === 0 ? (
           <p className="text-center py-10 text-muted-foreground">{t("noResults")}</p>
         ) : (
           <>
+            {/* Items Table */}
             <div className="overflow-x-auto">
               <table className="w-full text-sm">
                 <thead>
-                  <tr className="bg-secondary">
-                    <th className="px-3 py-2 text-start text-muted-foreground font-semibold">#</th>
-                    <th className="px-3 py-2 text-start text-muted-foreground font-semibold">{t("code")}</th>
-                    <th className="px-3 py-2 text-start text-muted-foreground font-semibold">{t("company")}</th>
-                    <th className="px-3 py-2 text-start text-muted-foreground font-semibold">{t("type")}</th>
-                    <th className="px-3 py-2 text-start text-muted-foreground font-semibold">{t("discountValueCol")}</th>
-                    <th className="px-3 py-2 text-start text-muted-foreground font-semibold">{t("maxValue")}</th>
-                    <th className="px-3 py-2 text-start text-muted-foreground font-semibold">{t("consumedBy")}</th>
-                    <th className="px-3 py-2 text-start text-muted-foreground font-semibold">{t("mobile")}</th>
-                    <th className="px-3 py-2 text-start text-muted-foreground font-semibold">{t("branch")}</th>
-                    <th className="px-3 py-2 text-start text-muted-foreground font-semibold">{t("consumedAt")}</th>
+                  <tr className="bg-primary text-primary-foreground">
+                    <th className="px-3 py-2.5 text-start font-semibold text-xs uppercase tracking-wider">{t("itemNo")}</th>
+                    <th className="px-3 py-2.5 text-start font-semibold text-xs uppercase tracking-wider">{t("code")}</th>
+                    <th className="px-3 py-2.5 text-start font-semibold text-xs uppercase tracking-wider">{t("consumedBy")}</th>
+                    <th className="px-3 py-2.5 text-start font-semibold text-xs uppercase tracking-wider">{t("mobile")}</th>
+                    <th className="px-3 py-2.5 text-start font-semibold text-xs uppercase tracking-wider">{t("branch")}</th>
+                    <th className="px-3 py-2.5 text-start font-semibold text-xs uppercase tracking-wider">{t("consumedAt")}</th>
+                    <th className="px-3 py-2.5 text-end font-semibold text-xs uppercase tracking-wider">{t("amount")}</th>
                   </tr>
                 </thead>
                 <tbody>
                   {consumedCoupons.map((c, i) => (
-                    <tr key={c.id} className="border-t border-border bg-background hover:bg-secondary/50">
+                    <tr key={c.id} className="border-b border-border hover:bg-secondary/30 transition-colors">
                       <td className="px-3 py-2 text-muted-foreground">{i + 1}</td>
-                      <td className="px-3 py-2 font-mono text-primary font-semibold">{c.code}</td>
-                      <td className="px-3 py-2 text-foreground">{c.company_name || "-"}</td>
-                      <td className="px-3 py-2 text-foreground">
-                        {c.discount_type === "percentage" ? "%" : t("fixedAmount")}
-                      </td>
-                      <td className="px-3 py-2 text-foreground">
-                        {c.discount_value}{c.discount_type === "percentage" ? "%" : ""}
-                      </td>
-                      <td className="px-3 py-2 text-foreground">{c.max_discount_value ?? t("noLimit")}</td>
+                      <td className="px-3 py-2 font-mono text-primary font-semibold text-xs">{c.code}</td>
                       <td className="px-3 py-2 text-foreground">{c.consumed_by_customer || "-"}</td>
                       <td className="px-3 py-2 text-foreground">{c.consumed_by_mobile || "-"}</td>
                       <td className="px-3 py-2 text-foreground">{c.branch_name || "-"}</td>
-                      <td className="px-3 py-2 text-muted-foreground">
+                      <td className="px-3 py-2 text-muted-foreground text-xs">
                         {c.consumed_at ? new Date(c.consumed_at).toLocaleDateString() : "-"}
+                      </td>
+                      <td className="px-3 py-2 text-end font-semibold text-foreground">
+                        {(c.max_discount_value ?? 0).toLocaleString()}
                       </td>
                     </tr>
                   ))}
                 </tbody>
-                {/* Totals Row */}
-                <tfoot>
-                  <tr className="border-t-2 border-primary bg-secondary font-bold">
-                    <td colSpan={4} className="px-3 py-3 text-foreground text-end">{t("sumDiscountValue")} / {t("sumMaxValue")}</td>
-                    <td className="px-3 py-3 text-primary">{sumDiscountValue}</td>
-                    <td className="px-3 py-3 text-primary">{sumMaxValue}</td>
-                    <td colSpan={4}></td>
-                  </tr>
-                </tfoot>
               </table>
+            </div>
+
+            {/* Totals */}
+            <div className="border-t-2 border-primary pt-4 space-y-2 max-w-xs ms-auto">
+              <div className="flex justify-between text-sm text-muted-foreground px-2">
+                <span>{t("subtotal")}</span>
+                <span className="font-semibold text-foreground">{sumMaxValue.toLocaleString()}</span>
+              </div>
+              <div className="flex justify-between bg-primary text-primary-foreground rounded-lg px-4 py-3 text-base font-bold">
+                <span>{t("totalDue")}</span>
+                <span>{sumMaxValue.toLocaleString()}</span>
+              </div>
+            </div>
+
+            {/* Footer Note */}
+            <div className="border-t border-border pt-4 mt-6">
+              <p className="text-[11px] text-muted-foreground text-center leading-relaxed">
+                {t("invoiceNote")}
+              </p>
+              <p className="text-[10px] text-muted-foreground/60 text-center mt-2">
+                {t("generatedBy")}: GoldenBox Coupons System
+              </p>
             </div>
           </>
         )}
