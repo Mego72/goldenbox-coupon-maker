@@ -62,6 +62,7 @@ const CouponList = () => {
         .from("coupons")
         .select("*")
         .order("created_at", { ascending: false })
+        .order("id", { ascending: false })
         .range(from, from + pageSize - 1);
 
       if (error || !data) {
