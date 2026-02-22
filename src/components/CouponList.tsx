@@ -1,4 +1,5 @@
 import { useEffect, useMemo, useState } from "react";
+import ConsumptionReport from "./ConsumptionReport";
 import { supabase } from "@/integrations/supabase/client";
 import { Badge } from "@/components/ui/badge";
 import { Input } from "@/components/ui/input";
@@ -7,7 +8,7 @@ import { Button } from "@/components/ui/button";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
 import { Label } from "@/components/ui/label";
-import { Loader2, Search, X, Power, Trash2, Download, Pencil, RotateCcw, ChevronLeft, ChevronRight, RefreshCw } from "lucide-react";
+import { Loader2, Search, X, Power, Trash2, Download, Pencil, RotateCcw, ChevronLeft, ChevronRight, RefreshCw, FileText } from "lucide-react";
 import { useLanguage } from "@/i18n/LanguageContext";
 import { toast } from "sonner";
 import * as XLSX from "xlsx";
@@ -48,6 +49,7 @@ const CouponList = () => {
   const [editForm, setEditForm] = useState<Partial<Coupon>>({});
   const [saving, setSaving] = useState(false);
   const [currentPage, setCurrentPage] = useState(1);
+  const [showReport, setShowReport] = useState(false);
   const { t } = useLanguage();
 
   const fetchAllCoupons = async () => {
@@ -362,14 +364,21 @@ const CouponList = () => {
             <RefreshCw className={`h-4 w-4 me-1 ${loading ? "animate-spin" : ""}`} /> {t("refresh") || "Refresh"}
           </Button>
           {filteredCoupons.length > 0 && (
-            <Button onClick={handleExportExcel} variant="outline" className="gold-border text-primary hover:bg-primary/10">
-              <Download className="me-2 h-4 w-4" /> {t("exportFiltered")}
-            </Button>
+            <>
+              <Button onClick={() => setShowReport(true)} variant="outline" className="gold-border text-primary hover:bg-primary/10">
+                <FileText className="me-2 h-4 w-4" /> {t("report")}
+              </Button>
+              <Button onClick={handleExportExcel} variant="outline" className="gold-border text-primary hover:bg-primary/10">
+                <Download className="me-2 h-4 w-4" /> {t("exportFiltered")}
+              </Button>
+            </>
           )}
         </div>
       </div>
 
-      {filteredCoupons.length === 0 ? (
+      {showReport ? (
+        <ConsumptionReport coupons={filteredCoupons} onBack={() => setShowReport(false)} />
+      ) : filteredCoupons.length === 0 ? (
         <div className="text-center py-12 text-muted-foreground">
           <p>{t("noResults")}</p>
         </div>
