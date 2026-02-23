@@ -500,6 +500,7 @@ const CouponList = () => {
                   <SortHeader label={t("consumedBy")} sortKey="consumed_by_customer" />
                   <SortHeader label={t("mobile")} sortKey="consumed_by_mobile" />
                   <SortHeader label={t("branch")} sortKey="branch_name" />
+                  <SortHeader label={t("consumedAt")} sortKey="consumed_at" />
                   <SortHeader label={t("creditNumber")} sortKey="credit_number" />
                   <SortHeader label={t("companyDue")} sortKey="company_due" />
                   <SortHeader label={t("status")} sortKey="is_active" />
@@ -525,6 +526,7 @@ const CouponList = () => {
                     <td className="px-4 py-3 text-foreground">{c.consumed_by_customer || "-"}</td>
                     <td className="px-4 py-3 text-foreground">{c.consumed_by_mobile || "-"}</td>
                     <td className="px-4 py-3 text-foreground">{c.branch_name || "-"}</td>
+                    <td className="px-4 py-3 text-muted-foreground">{c.consumed_at ? new Date(c.consumed_at).toLocaleDateString() : "-"}</td>
                     <td className="px-4 py-3 text-foreground">{c.credit_number || "-"}</td>
                     <td className="px-4 py-3 text-foreground">{c.company_due ?? "-"}</td>
                     <td className="px-4 py-3">
