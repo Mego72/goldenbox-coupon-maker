@@ -19,12 +19,14 @@ export type Database = {
           batch_id: string | null
           branch_name: string | null
           code: string
+          company_due: number | null
           company_name: string | null
           consumed_at: string | null
           consumed_by_customer: string | null
           consumed_by_mobile: string | null
           created_at: string
           created_by: string | null
+          credit_number: string | null
           description: string | null
           discount_type: string
           discount_value: number
@@ -38,12 +40,14 @@ export type Database = {
           batch_id?: string | null
           branch_name?: string | null
           code: string
+          company_due?: number | null
           company_name?: string | null
           consumed_at?: string | null
           consumed_by_customer?: string | null
           consumed_by_mobile?: string | null
           created_at?: string
           created_by?: string | null
+          credit_number?: string | null
           description?: string | null
           discount_type: string
           discount_value: number
@@ -57,12 +61,14 @@ export type Database = {
           batch_id?: string | null
           branch_name?: string | null
           code?: string
+          company_due?: number | null
           company_name?: string | null
           consumed_at?: string | null
           consumed_by_customer?: string | null
           consumed_by_mobile?: string | null
           created_at?: string
           created_by?: string | null
+          credit_number?: string | null
           description?: string | null
           discount_type?: string
           discount_value?: number
