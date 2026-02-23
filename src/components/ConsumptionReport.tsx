@@ -22,6 +22,8 @@ interface Coupon {
   branch_name: string | null;
   created_at: string;
   batch_id: string | null;
+  credit_number: string | null;
+  company_due: number | null;
 }
 
 interface ConsumptionReportProps {
@@ -42,8 +44,8 @@ const ConsumptionReport = ({ coupons, onBack }: ConsumptionReportProps) => {
     return `INV-${date.getFullYear()}${String(date.getMonth() + 1).padStart(2, "0")}${String(date.getDate()).padStart(2, "0")}-${Math.random().toString(36).substring(2, 6).toUpperCase()}`;
   }, []);
 
-  const sumMaxValue = consumedCoupons.reduce(
-    (sum, c) => sum + (c.max_discount_value ?? 0),
+  const sumCompanyDue = consumedCoupons.reduce(
+    (sum, c) => sum + (c.company_due ?? 0),
     0
   );
 
@@ -117,7 +119,7 @@ const ConsumptionReport = ({ coupons, onBack }: ConsumptionReportProps) => {
       [t("mobile")]: c.consumed_by_mobile || "-",
       [t("branch")]: c.branch_name || "-",
       [t("consumedAt")]: c.consumed_at ? new Date(c.consumed_at).toLocaleDateString() : "-",
-      [t("maxValue")]: c.max_discount_value ?? 0,
+      [t("companyDue")]: c.company_due ?? 0,
     }));
 
     wsData.push({
@@ -127,7 +129,7 @@ const ConsumptionReport = ({ coupons, onBack }: ConsumptionReportProps) => {
       [t("mobile")]: "",
       [t("branch")]: "",
       [t("consumedAt")]: t("totalDue"),
-      [t("maxValue")]: sumMaxValue as any,
+      [t("companyDue")]: sumCompanyDue as any,
     });
 
     const ws = XLSX.utils.json_to_sheet(wsData);
@@ -197,7 +199,7 @@ const ConsumptionReport = ({ coupons, onBack }: ConsumptionReportProps) => {
                     <th className="px-3 py-2.5 text-start font-semibold text-xs uppercase tracking-wider">{t("mobile")}</th>
                     <th className="px-3 py-2.5 text-start font-semibold text-xs uppercase tracking-wider">{t("branch")}</th>
                     <th className="px-3 py-2.5 text-start font-semibold text-xs uppercase tracking-wider">{t("consumedAt")}</th>
-                    <th className="px-3 py-2.5 text-end font-semibold text-xs uppercase tracking-wider">{t("amount")}</th>
+                    <th className="px-3 py-2.5 text-end font-semibold text-xs uppercase tracking-wider">{t("companyDue")}</th>
                   </tr>
                 </thead>
                 <tbody>
@@ -212,7 +214,7 @@ const ConsumptionReport = ({ coupons, onBack }: ConsumptionReportProps) => {
                         {c.consumed_at ? new Date(c.consumed_at).toLocaleDateString() : "-"}
                       </td>
                       <td className="px-3 py-2 text-end font-semibold text-foreground">
-                        {(c.max_discount_value ?? 0).toLocaleString()}
+                        {(c.company_due ?? 0).toLocaleString()}
                       </td>
                     </tr>
                   ))}
@@ -224,11 +226,11 @@ const ConsumptionReport = ({ coupons, onBack }: ConsumptionReportProps) => {
             <div className="border-t-2 border-primary pt-4 space-y-2 max-w-xs ms-auto">
               <div className="flex justify-between text-sm text-muted-foreground px-2">
                 <span>{t("subtotal")}</span>
-                <span className="font-semibold text-foreground">{sumMaxValue.toLocaleString()}</span>
+                <span className="font-semibold text-foreground">{sumCompanyDue.toLocaleString()}</span>
               </div>
               <div className="flex justify-between bg-primary text-primary-foreground rounded-lg px-4 py-3 text-base font-bold">
                 <span>{t("totalDue")}</span>
-                <span>{sumMaxValue.toLocaleString()}</span>
+                <span>{sumCompanyDue.toLocaleString()}</span>
               </div>
             </div>
 
