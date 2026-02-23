@@ -14,7 +14,7 @@ import { toast } from "sonner";
 import * as XLSX from "xlsx";
 import { BRANCHES } from "@/constants/branches";
 
-const PAGE_SIZE = 50;
+const PAGE_SIZE_OPTIONS = [50, 100, 200, 500] as const;
 
 type SortDirection = "asc" | "desc";
 type SortableKey = keyof Coupon;
@@ -59,6 +59,7 @@ const CouponList = () => {
   const [editForm, setEditForm] = useState<Partial<Coupon>>({});
   const [saving, setSaving] = useState(false);
   const [currentPage, setCurrentPage] = useState(1);
+  const [pageSize, setPageSize] = useState<number>(50);
   const [showReport, setShowReport] = useState(false);
   const [sortLevels, setSortLevels] = useState<SortLevel[]>([]);
   const { t } = useLanguage();
@@ -158,13 +159,13 @@ const CouponList = () => {
   // Reset page when filters change
   useEffect(() => {
     setCurrentPage(1);
-  }, [search, statusFilter, branchFilter, dateFrom, dateTo, sortLevels]);
+  }, [search, statusFilter, branchFilter, dateFrom, dateTo, sortLevels, pageSize]);
 
-  const totalPages = Math.ceil(sortedCoupons.length / PAGE_SIZE);
+  const totalPages = Math.ceil(sortedCoupons.length / pageSize);
   const paginatedCoupons = useMemo(() => {
-    const start = (currentPage - 1) * PAGE_SIZE;
-    return sortedCoupons.slice(start, start + PAGE_SIZE);
-  }, [sortedCoupons, currentPage]);
+    const start = (currentPage - 1) * pageSize;
+    return sortedCoupons.slice(start, start + pageSize);
+  }, [sortedCoupons, currentPage, pageSize]);
 
   const getSortIndex = (key: SortableKey) => sortLevels.findIndex((s) => s.key === key);
   const getSortDir = (key: SortableKey) => sortLevels.find((s) => s.key === key)?.direction;
@@ -514,7 +515,7 @@ const CouponList = () => {
                         onCheckedChange={() => toggleSelect(c.id)}
                       />
                     </td>
-                    <td className="px-4 py-3 text-muted-foreground">{(currentPage - 1) * PAGE_SIZE + i + 1}</td>
+                    <td className="px-4 py-3 text-muted-foreground">{(currentPage - 1) * pageSize + i + 1}</td>
                     <td className="px-4 py-3 font-mono text-primary font-semibold">{c.code}</td>
                     <td className="px-4 py-3 text-foreground">{c.discount_type === "percentage" ? "%" : t("fixedAmount")}</td>
                     <td className="px-4 py-3 text-foreground">{c.discount_value}{c.discount_type === "percentage" ? "%" : ""}</td>
@@ -587,11 +588,23 @@ const CouponList = () => {
         </div>
 
         {/* Pagination */}
-        {totalPages > 1 && (
-          <div className="flex items-center justify-between px-2 pt-2">
-            <span className="text-sm text-muted-foreground">
-              {(currentPage - 1) * PAGE_SIZE + 1}–{Math.min(currentPage * PAGE_SIZE, filteredCoupons.length)} / {filteredCoupons.length}
-            </span>
+          <div className="flex items-center justify-between px-2 pt-2 flex-wrap gap-2">
+            <div className="flex items-center gap-3">
+              <span className="text-sm text-muted-foreground">
+                {sortedCoupons.length > 0 ? `${(currentPage - 1) * pageSize + 1}–${Math.min(currentPage * pageSize, sortedCoupons.length)} / ${sortedCoupons.length}` : "0"}
+              </span>
+              <Select value={String(pageSize)} onValueChange={(v) => { setPageSize(Number(v)); setCurrentPage(1); }}>
+                <SelectTrigger className="h-8 w-[90px] bg-secondary border-border text-sm">
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent className="bg-popover border-border z-50">
+                  {PAGE_SIZE_OPTIONS.map((size) => (
+                    <SelectItem key={size} value={String(size)}>{size} / {t("page") || "page"}</SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+            {totalPages > 1 && (
             <div className="flex items-center gap-1">
               <Button
                 variant="outline"
@@ -635,8 +648,8 @@ const CouponList = () => {
                 <ChevronRight className="h-4 w-4" />
               </Button>
             </div>
+            )}
           </div>
-        )}
         </div>
       )}
 
