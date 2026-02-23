@@ -471,7 +471,7 @@ const CouponList = () => {
       </div>
 
       {showReport ? (
-        <ConsumptionReport coupons={filteredCoupons} onBack={() => setShowReport(false)} />
+        <ConsumptionReport coupons={sortedCoupons} onBack={() => setShowReport(false)} />
       ) : filteredCoupons.length === 0 ? (
         <div className="text-center py-12 text-muted-foreground">
           <p>{t("noResults")}</p>
