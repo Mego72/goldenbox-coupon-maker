@@ -154,6 +154,8 @@ export const translations = {
     companyDueDesc: "مبلغ مستحقات الشركة",
     creditNumberParam: "رقم الائتمان",
     companyDueParam: "مستحقات الشركة",
+    creditNumber: "رقم الائتمان",
+    companyDue: "مستحقات الشركة",
     error400UpdatePayment: "كود الكوبون مطلوب أو بيانات غير صالحة",
   },
   en: {
@@ -309,6 +311,8 @@ export const translations = {
     companyDueDesc: "Company due amount",
     creditNumberParam: "Credit Number",
     companyDueParam: "Company Due",
+    creditNumber: "Credit Number",
+    companyDue: "Company Due",
     error400UpdatePayment: "Coupon code is required or invalid data",
   },
 } as const;
