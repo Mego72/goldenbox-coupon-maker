@@ -1,1 +1,4 @@
 project_id = "bqgmdbukvhumylptshis"
+
+[functions.update-coupon-payment]
+verify_jwt = false

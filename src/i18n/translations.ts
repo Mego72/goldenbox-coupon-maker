@@ -149,6 +149,12 @@ export const translations = {
     periodFrom: "الفترة من",
     periodTo: "إلى",
     itemNo: "م",
+    updateCouponPaymentDesc: "تحديث رقم الائتمان ومستحقات الشركة لكوبون معين.",
+    creditNumberDesc: "رقم الائتمان أو رقم الإيصال",
+    companyDueDesc: "مبلغ مستحقات الشركة",
+    creditNumberParam: "رقم الائتمان",
+    companyDueParam: "مستحقات الشركة",
+    error400UpdatePayment: "كود الكوبون مطلوب أو بيانات غير صالحة",
   },
   en: {
     appName: "GoldenBox Discount Coupons",
@@ -298,6 +304,12 @@ export const translations = {
     periodFrom: "Period From",
     periodTo: "To",
     itemNo: "No.",
+    updateCouponPaymentDesc: "Update credit number and company due for a specific coupon.",
+    creditNumberDesc: "Credit or receipt number",
+    companyDueDesc: "Company due amount",
+    creditNumberParam: "Credit Number",
+    companyDueParam: "Company Due",
+    error400UpdatePayment: "Coupon code is required or invalid data",
   },
 } as const;
 
