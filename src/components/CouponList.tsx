@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useState, useCallback } from "react";
 import ConsumptionReport from "./ConsumptionReport";
 import { supabase } from "@/integrations/supabase/client";
 import { Badge } from "@/components/ui/badge";
@@ -8,13 +8,21 @@ import { Button } from "@/components/ui/button";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
 import { Label } from "@/components/ui/label";
-import { Loader2, Search, X, Power, Trash2, Download, Pencil, RotateCcw, ChevronLeft, ChevronRight, RefreshCw, FileText } from "lucide-react";
+import { Loader2, Search, X, Power, Trash2, Download, Pencil, RotateCcw, ChevronLeft, ChevronRight, RefreshCw, FileText, ArrowUp, ArrowDown, ChevronsUpDown } from "lucide-react";
 import { useLanguage } from "@/i18n/LanguageContext";
 import { toast } from "sonner";
 import * as XLSX from "xlsx";
 import { BRANCHES } from "@/constants/branches";
 
 const PAGE_SIZE = 50;
+
+type SortDirection = "asc" | "desc";
+type SortableKey = keyof Coupon;
+
+interface SortLevel {
+  key: SortableKey;
+  direction: SortDirection;
+}
 
 interface Coupon {
   id: string;
@@ -52,6 +60,7 @@ const CouponList = () => {
   const [saving, setSaving] = useState(false);
   const [currentPage, setCurrentPage] = useState(1);
   const [showReport, setShowReport] = useState(false);
+  const [sortLevels, setSortLevels] = useState<SortLevel[]>([]);
   const { t } = useLanguage();
 
   const fetchAllCoupons = async () => {
@@ -102,16 +111,91 @@ const CouponList = () => {
     });
   }, [coupons, search, statusFilter, branchFilter, dateFrom, dateTo]);
 
+  const handleSort = useCallback((key: SortableKey, shiftKey: boolean) => {
+    setSortLevels((prev) => {
+      const existingIndex = prev.findIndex((s) => s.key === key);
+      if (existingIndex >= 0) {
+        const updated = [...prev];
+        if (updated[existingIndex].direction === "asc") {
+          updated[existingIndex] = { key, direction: "desc" };
+        } else {
+          updated.splice(existingIndex, 1);
+        }
+        return updated;
+      }
+      if (shiftKey) {
+        return [...prev, { key, direction: "asc" }];
+      }
+      return [{ key, direction: "asc" }];
+    });
+  }, []);
+
+  const sortedCoupons = useMemo(() => {
+    if (sortLevels.length === 0) return filteredCoupons;
+    return [...filteredCoupons].sort((a, b) => {
+      for (const { key, direction } of sortLevels) {
+        const aVal = a[key];
+        const bVal = b[key];
+        const aNull = aVal == null || aVal === "";
+        const bNull = bVal == null || bVal === "";
+        if (aNull && bNull) continue;
+        if (aNull) return 1;
+        if (bNull) return -1;
+        let cmp = 0;
+        if (typeof aVal === "number" && typeof bVal === "number") {
+          cmp = aVal - bVal;
+        } else if (typeof aVal === "boolean" && typeof bVal === "boolean") {
+          cmp = (aVal ? 1 : 0) - (bVal ? 1 : 0);
+        } else {
+          cmp = String(aVal).localeCompare(String(bVal));
+        }
+        if (cmp !== 0) return direction === "asc" ? cmp : -cmp;
+      }
+      return 0;
+    });
+  }, [filteredCoupons, sortLevels]);
+
   // Reset page when filters change
   useEffect(() => {
     setCurrentPage(1);
-  }, [search, statusFilter, branchFilter, dateFrom, dateTo]);
+  }, [search, statusFilter, branchFilter, dateFrom, dateTo, sortLevels]);
 
-  const totalPages = Math.ceil(filteredCoupons.length / PAGE_SIZE);
+  const totalPages = Math.ceil(sortedCoupons.length / PAGE_SIZE);
   const paginatedCoupons = useMemo(() => {
     const start = (currentPage - 1) * PAGE_SIZE;
-    return filteredCoupons.slice(start, start + PAGE_SIZE);
-  }, [filteredCoupons, currentPage]);
+    return sortedCoupons.slice(start, start + PAGE_SIZE);
+  }, [sortedCoupons, currentPage]);
+
+  const getSortIndex = (key: SortableKey) => sortLevels.findIndex((s) => s.key === key);
+  const getSortDir = (key: SortableKey) => sortLevels.find((s) => s.key === key)?.direction;
+
+  const SortHeader = ({ label, sortKey }: { label: string; sortKey: SortableKey }) => {
+    const idx = getSortIndex(sortKey);
+    const dir = getSortDir(sortKey);
+    return (
+      <th
+        className="px-4 py-3 text-start text-muted-foreground font-semibold cursor-pointer select-none hover:text-foreground transition-colors"
+        onClick={(e) => handleSort(sortKey, e.shiftKey)}
+        title={t("sortHint")}
+      >
+        <span className="inline-flex items-center gap-1">
+          {label}
+          {dir === "asc" ? (
+            <ArrowUp className="h-3 w-3 text-primary" />
+          ) : dir === "desc" ? (
+            <ArrowDown className="h-3 w-3 text-primary" />
+          ) : (
+            <ChevronsUpDown className="h-3 w-3 opacity-30" />
+          )}
+          {sortLevels.length > 1 && idx >= 0 && (
+            <span className="text-[10px] font-bold text-primary bg-primary/10 rounded-full w-4 h-4 inline-flex items-center justify-center">
+              {idx + 1}
+            </span>
+          )}
+        </span>
+      </th>
+    );
+  };
 
   const hasFilters = search || statusFilter !== "all" || branchFilter !== "all" || dateFrom || dateTo;
 
@@ -362,6 +446,11 @@ const CouponList = () => {
               {t("deleteSelected", { count: selectedIds.size })}
             </Button>
           )}
+          {sortLevels.length > 0 && (
+            <Button variant="ghost" size="sm" onClick={() => setSortLevels([])} className="text-muted-foreground hover:text-foreground">
+              <X className="me-1 h-3 w-3" /> {t("clearSort")}
+            </Button>
+          )}
         </div>
         <div className="flex items-center gap-2">
           <Button onClick={fetchAllCoupons} variant="outline" size="sm" disabled={loading} className="text-muted-foreground hover:text-foreground">
@@ -401,18 +490,18 @@ const CouponList = () => {
                     />
                   </th>
                   <th className="px-4 py-3 text-start text-muted-foreground font-semibold">#</th>
-                  <th className="px-4 py-3 text-start text-muted-foreground font-semibold">{t("code")}</th>
-                  <th className="px-4 py-3 text-start text-muted-foreground font-semibold">{t("type")}</th>
-                  <th className="px-4 py-3 text-start text-muted-foreground font-semibold">{t("value")}</th>
-                  <th className="px-4 py-3 text-start text-muted-foreground font-semibold">{t("maxValue")}</th>
-                  <th className="px-4 py-3 text-start text-muted-foreground font-semibold">{t("company")}</th>
-                  <th className="px-4 py-3 text-start text-muted-foreground font-semibold">{t("expiry")}</th>
-                  <th className="px-4 py-3 text-start text-muted-foreground font-semibold">{t("consumedBy")}</th>
-                  <th className="px-4 py-3 text-start text-muted-foreground font-semibold">{t("mobile")}</th>
-                  <th className="px-4 py-3 text-start text-muted-foreground font-semibold">{t("branch")}</th>
-                  <th className="px-4 py-3 text-start text-muted-foreground font-semibold">{t("creditNumber")}</th>
-                  <th className="px-4 py-3 text-start text-muted-foreground font-semibold">{t("companyDue")}</th>
-                  <th className="px-4 py-3 text-start text-muted-foreground font-semibold">{t("status")}</th>
+                  <SortHeader label={t("code")} sortKey="code" />
+                  <SortHeader label={t("type")} sortKey="discount_type" />
+                  <SortHeader label={t("value")} sortKey="discount_value" />
+                  <SortHeader label={t("maxValue")} sortKey="max_discount_value" />
+                  <SortHeader label={t("company")} sortKey="company_name" />
+                  <SortHeader label={t("expiry")} sortKey="expiry_date" />
+                  <SortHeader label={t("consumedBy")} sortKey="consumed_by_customer" />
+                  <SortHeader label={t("mobile")} sortKey="consumed_by_mobile" />
+                  <SortHeader label={t("branch")} sortKey="branch_name" />
+                  <SortHeader label={t("creditNumber")} sortKey="credit_number" />
+                  <SortHeader label={t("companyDue")} sortKey="company_due" />
+                  <SortHeader label={t("status")} sortKey="is_active" />
                   <th className="px-4 py-3 text-start text-muted-foreground font-semibold sticky end-0 bg-secondary z-10">{t("actions")}</th>
                 </tr>
               </thead>
