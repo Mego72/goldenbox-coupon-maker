@@ -158,6 +158,7 @@ export const translations = {
     companyDue: "مستحقات الشركة",
     sortHint: "اضغط للترتيب، اضغط مع Shift للترتيب متعدد المستويات",
     clearSort: "مسح الترتيب",
+    page: "صفحة",
     error400UpdatePayment: "كود الكوبون مطلوب أو بيانات غير صالحة",
   },
   en: {
@@ -317,6 +318,7 @@ export const translations = {
     companyDue: "Company Due",
     sortHint: "Click to sort, Shift+Click for multi-level sort",
     clearSort: "Clear Sort",
+    page: "page",
     error400UpdatePayment: "Coupon code is required or invalid data",
   },
 } as const;
