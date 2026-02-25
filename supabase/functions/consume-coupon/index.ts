@@ -13,7 +13,7 @@ Deno.serve(async (req) => {
   }
 
   try {
-    const { code, customer_name, mobile_number, branch_name } = await req.json();
+    const { code, customer_name, mobile_number, branch_name, credit_number, company_due } = await req.json();
 
     if (!code || typeof code !== "string" || code.trim().length === 0) {
       return new Response(
@@ -92,16 +92,25 @@ Deno.serve(async (req) => {
     }
 
     // Consume the coupon
+    const updateData: Record<string, unknown> = {
+      is_consumed: true,
+      consumed_at: new Date().toISOString(),
+      consumed_by_customer: customer_name.trim(),
+      consumed_by_mobile: mobile_number.trim(),
+      branch_name: branch_name.trim(),
+      is_active: false,
+    };
+
+    if (credit_number !== undefined && typeof credit_number === "string") {
+      updateData.credit_number = credit_number.trim();
+    }
+    if (company_due !== undefined && typeof company_due === "number" && company_due >= 0) {
+      updateData.company_due = company_due;
+    }
+
     const { error: updateError } = await supabase
       .from("coupons")
-      .update({
-        is_consumed: true,
-        consumed_at: new Date().toISOString(),
-        consumed_by_customer: customer_name.trim(),
-        consumed_by_mobile: mobile_number.trim(),
-        branch_name: branch_name.trim(),
-        is_active: false,
-      })
+      .update(updateData)
       .eq("id", coupon.id);
 
     if (updateError) {

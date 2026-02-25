@@ -143,7 +143,9 @@ apikey: ${ANON_KEY}`}</CodeBlock>
               code: "GOLD-A1B2C3",
               customer_name: "أحمد محمد",
               mobile_number: "01012345678",
-              branch_name: "مدينتي"
+              branch_name: "مدينتي",
+              credit_number: "CR-2025-001",
+              company_due: 150.00
             }, null, 2)}</CodeBlock>
           </div>
 
@@ -185,6 +187,18 @@ apikey: ${ANON_KEY}`}</CodeBlock>
                     <td className="px-4 py-2 text-muted-foreground">
                       {t("branchNameDesc")}: {BRANCHES.join(" | ")}
                     </td>
+                  </tr>
+                  <tr className="border-t border-border">
+                    <td className="px-4 py-2 font-mono text-primary">credit_number</td>
+                    <td className="px-4 py-2 text-muted-foreground">string</td>
+                    <td className="px-4 py-2"><Badge variant="secondary" className="text-xs">Optional</Badge></td>
+                    <td className="px-4 py-2 text-muted-foreground">{t("creditNumberDesc")}</td>
+                  </tr>
+                  <tr className="border-t border-border">
+                    <td className="px-4 py-2 font-mono text-primary">company_due</td>
+                    <td className="px-4 py-2 text-muted-foreground">number</td>
+                    <td className="px-4 py-2"><Badge variant="secondary" className="text-xs">Optional</Badge></td>
+                    <td className="px-4 py-2 text-muted-foreground">{t("companyDueDesc")}</td>
                   </tr>
                 </tbody>
               </table>
@@ -230,7 +244,9 @@ apikey: ${ANON_KEY}`}</CodeBlock>
     "code": "GOLD-A1B2C3",
     "customer_name": "أحمد محمد",
     "mobile_number": "01012345678",
-    "branch_name": "مدينتي"
+    "branch_name": "مدينتي",
+    "credit_number": "CR-2025-001",
+    "company_due": 150.00
   }'`}</CodeBlock>
           </div>
         </CardContent>
