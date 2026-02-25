@@ -277,6 +277,8 @@ const CouponList = () => {
         consumed_by_mobile: null,
         consumed_at: null,
         branch_name: null,
+        credit_number: null,
+        company_due: null,
         is_active: true,
       })
       .eq("id", coupon.id);
@@ -286,7 +288,7 @@ const CouponList = () => {
       setCoupons((prev) =>
         prev.map((c) =>
           c.id === coupon.id
-            ? { ...c, is_consumed: false, consumed_by_customer: null, consumed_by_mobile: null, consumed_at: null, branch_name: null, is_active: true }
+            ? { ...c, is_consumed: false, consumed_by_customer: null, consumed_by_mobile: null, consumed_at: null, branch_name: null, credit_number: null, company_due: null, is_active: true }
             : c
         )
       );
