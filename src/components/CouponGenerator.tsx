@@ -5,8 +5,9 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { toast } from "sonner";
-import { Sparkles } from "lucide-react";
+import { Sparkles, PenLine } from "lucide-react";
 import { Switch } from "@/components/ui/switch";
+import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
 import * as XLSX from "xlsx";
 import { useLanguage } from "@/i18n/LanguageContext";
 
@@ -43,6 +44,9 @@ const CouponGenerator = () => {
   const [isUnlimited, setIsUnlimited] = useState(false);
   const [generatedCoupons, setGeneratedCoupons] = useState<GeneratedCoupon[]>([]);
   const [saving, setSaving] = useState(false);
+  // Manual coupon state
+  const [manualCode, setManualCode] = useState("");
+  const [manualSaving, setManualSaving] = useState(false);
 
   const handleGenerate = () => {
     const coupons: GeneratedCoupon[] = [];
@@ -98,6 +102,40 @@ const CouponGenerator = () => {
     setSaving(false);
   };
 
+  const handleSaveManualCoupon = async () => {
+    if (!manualCode.trim()) {
+      toast.error(t("codeRequired"));
+      return;
+    }
+    setManualSaving(true);
+    const { data: { user } } = await supabase.auth.getUser();
+    if (!user) {
+      toast.error(t("loginFirst"));
+      setManualSaving(false);
+      return;
+    }
+    const row = {
+      code: manualCode.trim().toUpperCase(),
+      discount_type: discountType,
+      discount_value: discountValue,
+      max_discount_value: discountType === "percentage" ? maxDiscountValue : null,
+      company_name: companyName || null,
+      description: description || null,
+      expiry_date: expiryDate || new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString(),
+      created_by: user.id,
+      batch_id: `manual-${Date.now()}`,
+      is_unlimited: isUnlimited,
+    };
+    const { error } = await supabase.from("coupons").insert(row);
+    if (error) {
+      toast.error(t("saveFailed") + error.message);
+    } else {
+      toast.success(t("manualCouponCreated"));
+      setManualCode("");
+    }
+    setManualSaving(false);
+  };
+
   const handleDownloadExcel = () => {
     if (generatedCoupons.length === 0) {
       toast.error(t("generateFirst"));
@@ -121,8 +159,70 @@ const CouponGenerator = () => {
     toast.success(t("excelDownloaded"));
   };
 
+  // Shared fields for both modes
+  const sharedFields = (
+    <>
+      <div className="space-y-2">
+        <Label className="text-foreground">{t("discountType")}</Label>
+        <Select value={discountType} onValueChange={setDiscountType}>
+          <SelectTrigger className="bg-secondary border-border">
+            <SelectValue />
+          </SelectTrigger>
+          <SelectContent>
+            <SelectItem value="percentage">{t("percentage")}</SelectItem>
+            <SelectItem value="fixed">{t("fixedAmount")}</SelectItem>
+          </SelectContent>
+        </Select>
+      </div>
+      <div className="space-y-2">
+        <Label className="text-foreground">{t("discountValue")}</Label>
+        <Input type="number" value={discountValue} onChange={(e) => setDiscountValue(Number(e.target.value))} min={1} className="bg-secondary border-border" />
+      </div>
+      {discountType === "percentage" && (
+        <div className="space-y-2">
+          <Label className="text-foreground">{t("maxDiscountValue")}</Label>
+          <Input
+            type="number"
+            value={maxDiscountValue ?? ""}
+            onChange={(e) => setMaxDiscountValue(e.target.value ? Number(e.target.value) : null)}
+            placeholder={t("maxDiscountPlaceholder")}
+            min={1}
+            className="bg-secondary border-border"
+          />
+        </div>
+      )}
+      <div className="space-y-2">
+        <Label className="text-foreground">{t("expiryDate")}</Label>
+        <Input type="date" value={expiryDate} onChange={(e) => setExpiryDate(e.target.value)} className="bg-secondary border-border" />
+      </div>
+      <div className="space-y-2">
+        <Label className="text-foreground">{t("companyName")}</Label>
+        <Input value={companyName} onChange={(e) => setCompanyName(e.target.value)} placeholder={t("companyNamePlaceholder")} className="bg-secondary border-border" />
+      </div>
+      <div className="space-y-2 md:col-span-2 lg:col-span-3">
+        <Label className="text-foreground">{t("description")}</Label>
+        <Input value={description} onChange={(e) => setDescription(e.target.value)} placeholder={t("descriptionPlaceholder")} className="bg-secondary border-border" />
+      </div>
+      <div className="flex items-center gap-3 md:col-span-2 lg:col-span-3">
+        <Switch checked={isUnlimited} onCheckedChange={setIsUnlimited} />
+        <div>
+          <Label className="text-foreground">{t("unlimitedMultiUse")}</Label>
+          <p className="text-xs text-muted-foreground">{t("unlimitedNote")}</p>
+        </div>
+      </div>
+    </>
+  );
+
   return (
     <div className="space-y-8">
+      <Tabs defaultValue="auto" className="w-full">
+        <TabsList className="mb-6">
+          <TabsTrigger value="auto"><Sparkles className="h-4 w-4 me-2" />{t("generateCoupons")}</TabsTrigger>
+          <TabsTrigger value="manual"><PenLine className="h-4 w-4 me-2" />{t("manualCoupon")}</TabsTrigger>
+        </TabsList>
+
+        {/* Auto Generate Tab */}
+        <TabsContent value="auto">
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
         <div className="space-y-2">
           <Label className="text-foreground">{t("codePrefix")}</Label>
@@ -136,54 +236,7 @@ const CouponGenerator = () => {
           <Label className="text-foreground">{t("quantity")}</Label>
           <Input type="number" value={quantity} onChange={(e) => setQuantity(Number(e.target.value))} min={1} max={1000} className="bg-secondary border-border" />
         </div>
-        <div className="space-y-2">
-          <Label className="text-foreground">{t("discountType")}</Label>
-          <Select value={discountType} onValueChange={setDiscountType}>
-            <SelectTrigger className="bg-secondary border-border">
-              <SelectValue />
-            </SelectTrigger>
-            <SelectContent>
-              <SelectItem value="percentage">{t("percentage")}</SelectItem>
-              <SelectItem value="fixed">{t("fixedAmount")}</SelectItem>
-            </SelectContent>
-          </Select>
-        </div>
-        <div className="space-y-2">
-          <Label className="text-foreground">{t("discountValue")}</Label>
-          <Input type="number" value={discountValue} onChange={(e) => setDiscountValue(Number(e.target.value))} min={1} className="bg-secondary border-border" />
-        </div>
-        {discountType === "percentage" && (
-          <div className="space-y-2">
-            <Label className="text-foreground">{t("maxDiscountValue")}</Label>
-            <Input
-              type="number"
-              value={maxDiscountValue ?? ""}
-              onChange={(e) => setMaxDiscountValue(e.target.value ? Number(e.target.value) : null)}
-              placeholder={t("maxDiscountPlaceholder")}
-              min={1}
-              className="bg-secondary border-border"
-            />
-          </div>
-        )}
-        <div className="space-y-2">
-          <Label className="text-foreground">{t("expiryDate")}</Label>
-          <Input type="date" value={expiryDate} onChange={(e) => setExpiryDate(e.target.value)} className="bg-secondary border-border" />
-        </div>
-        <div className="space-y-2">
-          <Label className="text-foreground">{t("companyName")}</Label>
-          <Input value={companyName} onChange={(e) => setCompanyName(e.target.value)} placeholder={t("companyNamePlaceholder")} className="bg-secondary border-border" />
-        </div>
-        <div className="space-y-2 md:col-span-2 lg:col-span-3">
-          <Label className="text-foreground">{t("description")}</Label>
-          <Input value={description} onChange={(e) => setDescription(e.target.value)} placeholder={t("descriptionPlaceholder")} className="bg-secondary border-border" />
-        </div>
-        <div className="flex items-center gap-3 md:col-span-2 lg:col-span-3">
-          <Switch checked={isUnlimited} onCheckedChange={setIsUnlimited} />
-          <div>
-            <Label className="text-foreground">{t("unlimitedMultiUse")}</Label>
-            <p className="text-xs text-muted-foreground">{t("unlimitedNote")}</p>
-          </div>
-        </div>
+        {sharedFields}
       </div>
 
       <div className="flex flex-wrap gap-4">
@@ -234,6 +287,30 @@ const CouponGenerator = () => {
           </div>
         </div>
       )}
+        </TabsContent>
+
+        {/* Manual Coupon Tab */}
+        <TabsContent value="manual">
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+            <div className="space-y-2 md:col-span-2 lg:col-span-3">
+              <Label className="text-foreground">{t("customCode")}</Label>
+              <Input
+                value={manualCode}
+                onChange={(e) => setManualCode(e.target.value.toUpperCase())}
+                placeholder={t("customCodePlaceholder")}
+                className="bg-secondary border-border font-mono text-lg"
+              />
+              <p className="text-xs text-muted-foreground">{t("manualCouponDesc")}</p>
+            </div>
+            {sharedFields}
+          </div>
+          <div className="flex flex-wrap gap-4 mt-6">
+            <Button onClick={handleSaveManualCoupon} disabled={manualSaving} className="gold-gradient-bg text-primary-foreground font-semibold hover:opacity-90">
+              <PenLine className="me-2 h-4 w-4" /> {manualSaving ? t("saving") : t("createManualCoupon")}
+            </Button>
+          </div>
+        </TabsContent>
+      </Tabs>
     </div>
   );
 };
