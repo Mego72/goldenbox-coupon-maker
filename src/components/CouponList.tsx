@@ -8,7 +8,7 @@ import { Button } from "@/components/ui/button";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
 import { Label } from "@/components/ui/label";
-import { Loader2, Search, X, Power, Trash2, Download, Pencil, RotateCcw, ChevronLeft, ChevronRight, RefreshCw, FileText, ArrowUp, ArrowDown, ChevronsUpDown } from "lucide-react";
+import { Loader2, Search, X, Power, Trash2, Download, Pencil, RotateCcw, ChevronLeft, ChevronRight, RefreshCw, FileText, ArrowUp, ArrowDown, ChevronsUpDown, Eye } from "lucide-react";
 import { useLanguage } from "@/i18n/LanguageContext";
 import { toast } from "sonner";
 import * as XLSX from "xlsx";
@@ -63,6 +63,9 @@ const CouponList = () => {
   const [pageSize, setPageSize] = useState<number>(50);
   const [showReport, setShowReport] = useState(false);
   const [sortLevels, setSortLevels] = useState<SortLevel[]>([]);
+  const [consumptionCoupon, setConsumptionCoupon] = useState<Coupon | null>(null);
+  const [consumptions, setConsumptions] = useState<any[]>([]);
+  const [loadingConsumptions, setLoadingConsumptions] = useState(false);
   const { t } = useLanguage();
 
   const fetchAllCoupons = async () => {
@@ -309,6 +312,22 @@ const CouponList = () => {
     });
   };
 
+  const handleViewConsumptions = async (coupon: Coupon) => {
+    setConsumptionCoupon(coupon);
+    setLoadingConsumptions(true);
+    const { data, error } = await supabase
+      .from("coupon_consumptions")
+      .select("*")
+      .eq("coupon_id", coupon.id)
+      .order("consumed_at", { ascending: false });
+    if (!error && data) {
+      setConsumptions(data);
+    } else {
+      setConsumptions([]);
+    }
+    setLoadingConsumptions(false);
+  };
+
   const handleSaveEdit = async () => {
     if (!editCoupon) return;
     setSaving(true);
@@ -545,6 +564,17 @@ const CouponList = () => {
                     </td>
                     <td className="px-4 py-3 sticky end-0 z-10 bg-inherit">
                       <div className="flex items-center gap-1">
+                        {c.is_unlimited && (
+                          <Button
+                            variant="ghost"
+                            size="icon"
+                            onClick={() => handleViewConsumptions(c)}
+                            className="text-blue-500 hover:text-blue-400"
+                            title={t("viewConsumptions")}
+                          >
+                            <Eye className="h-4 w-4" />
+                          </Button>
+                        )}
                         <Button
                           variant="ghost"
                           size="icon"
@@ -735,6 +765,51 @@ const CouponList = () => {
               {t("save")}
             </Button>
           </DialogFooter>
+        </DialogContent>
+      </Dialog>
+      {/* Consumption History Dialog */}
+      <Dialog open={!!consumptionCoupon} onOpenChange={(open) => !open && setConsumptionCoupon(null)}>
+        <DialogContent className="bg-background border-border max-w-2xl max-h-[80vh] overflow-y-auto">
+          <DialogHeader>
+            <DialogTitle className="text-foreground">{t("viewConsumptions")} — {consumptionCoupon?.code}</DialogTitle>
+          </DialogHeader>
+          {loadingConsumptions ? (
+            <div className="flex justify-center py-8">
+              <Loader2 className="h-6 w-6 animate-spin text-primary" />
+            </div>
+          ) : consumptions.length === 0 ? (
+            <p className="text-center py-8 text-muted-foreground">{t("noResults")}</p>
+          ) : (
+            <div className="overflow-x-auto">
+              <p className="text-sm text-muted-foreground mb-3">{t("consumptionCount")}: {consumptions.length}</p>
+              <table className="w-full text-sm">
+                <thead>
+                  <tr className="bg-secondary">
+                    <th className="px-3 py-2 text-start text-muted-foreground font-semibold">#</th>
+                    <th className="px-3 py-2 text-start text-muted-foreground font-semibold">{t("branch")}</th>
+                    <th className="px-3 py-2 text-start text-muted-foreground font-semibold">{t("consumedBy")}</th>
+                    <th className="px-3 py-2 text-start text-muted-foreground font-semibold">{t("mobile")}</th>
+                    <th className="px-3 py-2 text-start text-muted-foreground font-semibold">{t("creditNumber")}</th>
+                    <th className="px-3 py-2 text-start text-muted-foreground font-semibold">{t("companyDue")}</th>
+                    <th className="px-3 py-2 text-start text-muted-foreground font-semibold">{t("consumedAt")}</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {consumptions.map((r, i) => (
+                    <tr key={r.id} className="border-t border-border hover:bg-secondary/50">
+                      <td className="px-3 py-2 text-muted-foreground">{i + 1}</td>
+                      <td className="px-3 py-2 text-foreground">{r.branch_name || "-"}</td>
+                      <td className="px-3 py-2 text-foreground">{r.customer_name || "-"}</td>
+                      <td className="px-3 py-2 text-foreground">{r.mobile_number || "-"}</td>
+                      <td className="px-3 py-2 text-foreground">{r.credit_number || "-"}</td>
+                      <td className="px-3 py-2 text-foreground">{r.company_due ?? "-"}</td>
+                      <td className="px-3 py-2 text-muted-foreground">{new Date(r.consumed_at).toLocaleString()}</td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          )}
         </DialogContent>
       </Dialog>
     </div>
