@@ -48,7 +48,8 @@ interface Coupon {
 
 const CouponList = () => {
   const [coupons, setCoupons] = useState<Coupon[]>([]);
-  const [loading, setLoading] = useState(true);
+  const [loading, setLoading] = useState(false);
+  const [dataLoaded, setDataLoaded] = useState(false);
   const [search, setSearch] = useState("");
   const [statusFilter, setStatusFilter] = useState("all");
   const [branchFilter, setBranchFilter] = useState("all");
@@ -72,7 +73,7 @@ const CouponList = () => {
     setLoading(true);
     let allData: Coupon[] = [];
     let from = 0;
-    const pageSize = 1000;
+    const batchSize = 1000;
     let hasMore = true;
 
     while (hasMore) {
@@ -81,24 +82,73 @@ const CouponList = () => {
         .select("*")
         .order("created_at", { ascending: false })
         .order("id", { ascending: false })
-        .range(from, from + pageSize - 1);
+        .range(from, from + batchSize - 1);
 
       if (error || !data) {
         hasMore = false;
       } else {
         allData = [...allData, ...data];
-        hasMore = data.length === pageSize;
-        from += pageSize;
+        hasMore = data.length === batchSize;
+        from += batchSize;
       }
     }
 
     setCoupons(allData);
+    setDataLoaded(true);
     setLoading(false);
   };
 
-  useEffect(() => {
-    fetchAllCoupons();
-  }, []);
+  const fetchFilteredCoupons = async () => {
+    setLoading(true);
+    let allData: Coupon[] = [];
+    let from = 0;
+    const batchSize = 1000;
+    let hasMore = true;
+
+    const buildQuery = () => {
+      let query = supabase
+        .from("coupons")
+        .select("*")
+        .order("created_at", { ascending: false })
+        .order("id", { ascending: false });
+
+      if (search) {
+        query = query.or(`code.ilike.%${search}%,company_name.ilike.%${search}%`);
+      }
+      if (statusFilter === "active") {
+        query = query.eq("is_active", true).eq("is_consumed", false);
+      } else if (statusFilter === "consumed") {
+        query = query.eq("is_consumed", true);
+      } else if (statusFilter === "inactive") {
+        query = query.eq("is_active", false).eq("is_consumed", false);
+      }
+      if (branchFilter !== "all") {
+        query = query.eq("branch_name", branchFilter);
+      }
+      if (dateFrom) {
+        query = query.gte("created_at", dateFrom);
+      }
+      if (dateTo) {
+        query = query.lte("created_at", dateTo + "T23:59:59");
+      }
+      return query;
+    };
+
+    while (hasMore) {
+      const { data, error } = await buildQuery().range(from, from + batchSize - 1);
+      if (error || !data) {
+        hasMore = false;
+      } else {
+        allData = [...allData, ...data];
+        hasMore = data.length === batchSize;
+        from += batchSize;
+      }
+    }
+
+    setCoupons(allData);
+    setDataLoaded(true);
+    setLoading(false);
+  };
 
   const filteredCoupons = useMemo(() => {
     return coupons.filter((c) => {
@@ -386,15 +436,6 @@ const CouponList = () => {
     );
   }
 
-  if (coupons.length === 0) {
-    return (
-      <div className="text-center py-20 text-muted-foreground">
-        <p className="text-lg">{t("noCoupons")}</p>
-        <p className="text-sm mt-1">{t("noCouponsHint")}</p>
-      </div>
-    );
-  }
-
   const allSelected = filteredCoupons.length > 0 && selectedIds.size === filteredCoupons.length;
 
   return (
@@ -448,11 +489,14 @@ const CouponList = () => {
         />
       </div>
 
+      {/* Load buttons */}
       <div className="flex items-center justify-between flex-wrap gap-2">
         <div className="flex items-center gap-3">
-          <span className="text-sm font-medium text-foreground">
-            {filteredCoupons.length} {hasFilters ? `/ ${coupons.length}` : ""} {t("totalCoupons")}
-          </span>
+          {dataLoaded && (
+            <span className="text-sm font-medium text-foreground">
+              {filteredCoupons.length} {hasFilters ? `/ ${coupons.length}` : ""} {t("totalCoupons")}
+            </span>
+          )}
           {hasFilters && (
             <Button variant="ghost" size="sm" onClick={clearFilters} className="text-muted-foreground hover:text-foreground">
               <X className="me-1 h-4 w-4" /> {t("clearFilters")}
@@ -476,10 +520,15 @@ const CouponList = () => {
           )}
         </div>
         <div className="flex items-center gap-2">
-          <Button onClick={fetchAllCoupons} variant="outline" size="sm" disabled={loading} className="text-muted-foreground hover:text-foreground">
-            <RefreshCw className={`h-4 w-4 me-1 ${loading ? "animate-spin" : ""}`} /> {t("refresh") || "Refresh"}
+          {hasFilters && (
+            <Button onClick={fetchFilteredCoupons} variant="default" size="sm" disabled={loading}>
+              <Search className="h-4 w-4 me-1" /> {t("loadData")}
+            </Button>
+          )}
+          <Button onClick={fetchAllCoupons} variant="outline" size="sm" disabled={loading} className="gold-border text-primary hover:bg-primary/10">
+            <RefreshCw className={`h-4 w-4 me-1 ${loading ? "animate-spin" : ""}`} /> {t("loadAll")}
           </Button>
-          {filteredCoupons.length > 0 && (
+          {dataLoaded && filteredCoupons.length > 0 && (
             <>
               <Button onClick={() => setShowReport(true)} variant="outline" className="gold-border text-primary hover:bg-primary/10">
                 <FileText className="me-2 h-4 w-4" /> {t("report")}
@@ -492,7 +541,12 @@ const CouponList = () => {
         </div>
       </div>
 
-      {showReport ? (
+      {!dataLoaded ? (
+        <div className="text-center py-20 text-muted-foreground border border-dashed border-border rounded-xl">
+          <Search className="h-10 w-10 mx-auto mb-3 opacity-30" />
+          <p className="text-lg">{t("selectFilterFirst")}</p>
+        </div>
+      ) : showReport ? (
         <ConsumptionReport coupons={sortedCoupons} onBack={() => setShowReport(false)} />
       ) : filteredCoupons.length === 0 ? (
         <div className="text-center py-12 text-muted-foreground">
