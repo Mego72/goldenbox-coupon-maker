@@ -3,7 +3,7 @@ import { useNavigate } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Button } from "@/components/ui/button";
-import { LogOut, Sparkles, List, LayoutDashboard, FileCode, DollarSign } from "lucide-react";
+import { LogOut, Sparkles, List, LayoutDashboard, FileCode } from "lucide-react";
 import CouponDashboard from "@/components/CouponDashboard";
 import CouponGenerator from "@/components/CouponGenerator";
 import CouponList from "@/components/CouponList";
@@ -15,7 +15,7 @@ import type { User } from "@supabase/supabase-js";
 const Index = () => {
   const [user, setUser] = useState<User | null>(null);
   const [loading, setLoading] = useState(true);
-  const [totalCompanyDue, setTotalCompanyDue] = useState<number>(0);
+  
   const navigate = useNavigate();
   const { t } = useLanguage();
 
@@ -33,19 +33,6 @@ const Index = () => {
     return () => subscription.unsubscribe();
   }, [navigate]);
 
-  // Fetch total company due
-  useEffect(() => {
-    const fetchTotalDue = async () => {
-      const { data } = await supabase
-        .from("coupon_consumptions")
-        .select("company_due");
-      if (data) {
-        const total = data.reduce((sum, row) => sum + (row.company_due ?? 0), 0);
-        setTotalCompanyDue(total);
-      }
-    };
-    if (user) fetchTotalDue();
-  }, [user]);
 
   const handleLogout = async () => {
     await supabase.auth.signOut();
@@ -60,11 +47,6 @@ const Index = () => {
       <header className="border-b border-border px-6 py-4 flex items-center justify-between">
         <h1 className="text-2xl font-bold gold-gradient-text">{t("appName")}</h1>
         <div className="flex items-center gap-4">
-          <div className="flex items-center gap-1.5 bg-primary/10 border border-primary/30 rounded-lg px-3 py-1.5">
-            <DollarSign className="h-4 w-4 text-primary" />
-            <span className="text-xs text-muted-foreground">{t("totalDue")}:</span>
-            <span className="text-sm font-bold text-primary">{totalCompanyDue.toLocaleString()}</span>
-          </div>
           <LanguageSwitcher />
           <span className="text-sm text-muted-foreground hidden sm:block">{user.email}</span>
           <Button variant="outline" size="sm" onClick={handleLogout} className="gold-border text-primary hover:bg-primary/10">
