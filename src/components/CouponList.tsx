@@ -835,7 +835,13 @@ const CouponList = () => {
             <p className="text-center py-8 text-muted-foreground">{t("noResults")}</p>
           ) : (
             <div className="overflow-x-auto">
-              <p className="text-sm text-muted-foreground mb-3">{t("consumptionCount")}: {consumptions.length}</p>
+              <div className="flex items-center justify-between mb-3">
+                <p className="text-sm text-muted-foreground">{t("consumptionCount")}: {consumptions.length}</p>
+                <div className="flex items-center gap-1.5 bg-primary/10 border border-primary/30 rounded-lg px-3 py-1.5">
+                  <span className="text-xs text-muted-foreground">{t("totalDue")}:</span>
+                  <span className="text-sm font-bold text-primary">{consumptions.reduce((sum: number, r: any) => sum + (r.company_due ?? 0), 0).toLocaleString()}</span>
+                </div>
+              </div>
               <table className="w-full text-sm">
                 <thead>
                   <tr className="bg-secondary">
