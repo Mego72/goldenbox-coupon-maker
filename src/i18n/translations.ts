@@ -167,6 +167,13 @@ export const translations = {
     consumptionCount: "عدد الاستهلاكات",
     unlimitedNote: "عند تفعيل هذا الخيار، يمكن استهلاك الكوبون عدة مرات ويتم تسجيل كل استهلاك على حدة.",
     unlimitedApiNote: "للكوبونات غير المحدودة: يتم تسجيل كل استهلاك في جدول منفصل ويبقى الكوبون نشطاً.",
+    manualCoupon: "كوبون يدوي",
+    manualCouponDesc: "إنشاء كوبون واحد بكود مخصص تكتبه يدوياً",
+    customCode: "الكود المخصص",
+    customCodePlaceholder: "أدخل كود الكوبون المخصص...",
+    createManualCoupon: "إنشاء كوبون يدوي",
+    manualCouponCreated: "تم إنشاء الكوبون اليدوي بنجاح!",
+    codeRequired: "يرجى إدخال كود الكوبون",
   },
   en: {
     appName: "GoldenBox Discount Coupons",
@@ -334,6 +341,13 @@ export const translations = {
     consumptionCount: "Consumption Count",
     unlimitedNote: "When enabled, this coupon can be consumed multiple times and each consumption is logged separately.",
     unlimitedApiNote: "For unlimited coupons: each consumption is logged in a separate table and the coupon remains active.",
+    manualCoupon: "Manual Coupon",
+    manualCouponDesc: "Create a single coupon with a custom code you type manually",
+    customCode: "Custom Code",
+    customCodePlaceholder: "Enter custom coupon code...",
+    createManualCoupon: "Create Manual Coupon",
+    manualCouponCreated: "Manual coupon created successfully!",
+    codeRequired: "Please enter a coupon code",
   },
 } as const;
 
