@@ -1,9 +1,10 @@
-import { useRef, useMemo } from "react";
+import { useRef, useMemo, useEffect, useState } from "react";
 import { Button } from "@/components/ui/button";
 import { useLanguage } from "@/i18n/LanguageContext";
 import { toast } from "sonner";
 import * as XLSX from "xlsx";
 import { Printer, Download, ArrowLeft } from "lucide-react";
+import { supabase } from "@/integrations/supabase/client";
 
 interface Coupon {
   id: string;
@@ -27,6 +28,16 @@ interface Coupon {
   is_unlimited: boolean;
 }
 
+interface ConsumptionRow {
+  code: string;
+  consumed_by_customer: string | null;
+  consumed_by_mobile: string | null;
+  branch_name: string | null;
+  consumed_at: string | null;
+  company_due: number | null;
+  credit_number: string | null;
+}
+
 interface ConsumptionReportProps {
   coupons: Coupon[];
   onBack: () => void;
@@ -35,24 +46,79 @@ interface ConsumptionReportProps {
 const ConsumptionReport = ({ coupons, onBack }: ConsumptionReportProps) => {
   const { t, lang, dir } = useLanguage();
   const reportRef = useRef<HTMLDivElement>(null);
+  const [unlimitedRows, setUnlimitedRows] = useState<ConsumptionRow[]>([]);
+  const [loading, setLoading] = useState(false);
 
-  const consumedCoupons = coupons.filter((c) => c.is_consumed);
+  // Get single-use consumed coupons
+  const singleUseConsumed: ConsumptionRow[] = coupons
+    .filter((c) => c.is_consumed && !c.is_unlimited)
+    .map((c) => ({
+      code: c.code,
+      consumed_by_customer: c.consumed_by_customer,
+      consumed_by_mobile: c.consumed_by_mobile,
+      branch_name: c.branch_name,
+      consumed_at: c.consumed_at,
+      company_due: c.company_due,
+      credit_number: c.credit_number,
+    }));
 
-  const companyName = consumedCoupons[0]?.company_name || "-";
+  // Fetch unlimited coupon consumptions
+  useEffect(() => {
+    const unlimitedCoupons = coupons.filter((c) => c.is_unlimited);
+    if (unlimitedCoupons.length === 0) {
+      setUnlimitedRows([]);
+      return;
+    }
+
+    const fetchUnlimitedConsumptions = async () => {
+      setLoading(true);
+      const ids = unlimitedCoupons.map((c) => c.id);
+      const { data, error } = await supabase
+        .from("coupon_consumptions")
+        .select("code, customer_name, mobile_number, branch_name, consumed_at, company_due, credit_number")
+        .in("coupon_id", ids)
+        .order("consumed_at", { ascending: false });
+
+      if (!error && data) {
+        setUnlimitedRows(
+          data.map((r) => ({
+            code: r.code,
+            consumed_by_customer: r.customer_name,
+            consumed_by_mobile: r.mobile_number,
+            branch_name: r.branch_name,
+            consumed_at: r.consumed_at,
+            company_due: r.company_due,
+            credit_number: r.credit_number,
+          }))
+        );
+      }
+      setLoading(false);
+    };
+
+    fetchUnlimitedConsumptions();
+  }, [coupons]);
+
+  // Merge all consumption rows
+  const allConsumed = useMemo(
+    () => [...singleUseConsumed, ...unlimitedRows],
+    [singleUseConsumed, unlimitedRows]
+  );
+
+  const companyName = coupons[0]?.company_name || "-";
 
   const invoiceNumber = useMemo(() => {
     const date = new Date();
     return `INV-${date.getFullYear()}${String(date.getMonth() + 1).padStart(2, "0")}${String(date.getDate()).padStart(2, "0")}-${Math.random().toString(36).substring(2, 6).toUpperCase()}`;
   }, []);
 
-  const sumCompanyDue = consumedCoupons.reduce(
+  const sumCompanyDue = allConsumed.reduce(
     (sum, c) => sum + (c.company_due ?? 0),
     0
   );
 
   const dateRange = useMemo(() => {
-    if (consumedCoupons.length === 0) return { from: "-", to: "-" };
-    const dates = consumedCoupons
+    if (allConsumed.length === 0) return { from: "-", to: "-" };
+    const dates = allConsumed
       .map((c) => c.consumed_at ? new Date(c.consumed_at).getTime() : 0)
       .filter(Boolean);
     if (dates.length === 0) return { from: "-", to: "-" };
@@ -60,7 +126,7 @@ const ConsumptionReport = ({ coupons, onBack }: ConsumptionReportProps) => {
       from: new Date(Math.min(...dates)).toLocaleDateString(),
       to: new Date(Math.max(...dates)).toLocaleDateString(),
     };
-  }, [consumedCoupons]);
+  }, [allConsumed]);
 
   const handlePrint = () => {
     const printContent = reportRef.current;
@@ -113,7 +179,7 @@ const ConsumptionReport = ({ coupons, onBack }: ConsumptionReportProps) => {
   };
 
   const handleExportExcel = () => {
-    const wsData = consumedCoupons.map((c, i) => ({
+    const wsData = allConsumed.map((c, i) => ({
       [t("itemNo")]: i + 1,
       [t("code")]: c.code,
       [t("consumedBy")]: c.consumed_by_customer || "-",
@@ -144,6 +210,14 @@ const ConsumptionReport = ({ coupons, onBack }: ConsumptionReportProps) => {
     toast.success(t("excelDownloaded"));
   };
 
+  if (loading) {
+    return (
+      <div className="flex items-center justify-center py-12">
+        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div>
+      </div>
+    );
+  }
+
   return (
     <div className="space-y-4">
       {/* Toolbar */}
@@ -172,7 +246,7 @@ const ConsumptionReport = ({ coupons, onBack }: ConsumptionReportProps) => {
           <div className="text-end text-xs text-muted-foreground space-y-1">
             <div><span className="font-semibold text-foreground">{t("invoiceNumber")}:</span> {invoiceNumber}</div>
             <div><span className="font-semibold text-foreground">{t("invoiceDate")}:</span> {new Date().toLocaleDateString()}</div>
-            <div><span className="font-semibold text-foreground">{t("consumedCount")}:</span> {consumedCoupons.length}</div>
+            <div><span className="font-semibold text-foreground">{t("consumedCount")}:</span> {allConsumed.length}</div>
           </div>
         </div>
 
@@ -185,7 +259,7 @@ const ConsumptionReport = ({ coupons, onBack }: ConsumptionReportProps) => {
           </p>
         </div>
 
-        {consumedCoupons.length === 0 ? (
+        {allConsumed.length === 0 ? (
           <p className="text-center py-10 text-muted-foreground">{t("noResults")}</p>
         ) : (
           <>
@@ -204,8 +278,8 @@ const ConsumptionReport = ({ coupons, onBack }: ConsumptionReportProps) => {
                   </tr>
                 </thead>
                 <tbody>
-                  {consumedCoupons.map((c, i) => (
-                    <tr key={c.id} className="border-b border-border hover:bg-secondary/30 transition-colors">
+                  {allConsumed.map((c, i) => (
+                    <tr key={i} className="border-b border-border hover:bg-secondary/30 transition-colors">
                       <td className="px-3 py-2 text-muted-foreground">{i + 1}</td>
                       <td className="px-3 py-2 font-mono text-primary font-semibold text-xs">{c.code}</td>
                       <td className="px-3 py-2 text-foreground">{c.consumed_by_customer || "-"}</td>
