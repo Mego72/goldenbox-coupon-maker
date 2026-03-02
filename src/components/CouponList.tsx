@@ -43,6 +43,7 @@ interface Coupon {
   batch_id: string | null;
   credit_number: string | null;
   company_due: number | null;
+  is_unlimited: boolean;
 }
 
 const CouponList = () => {
@@ -532,7 +533,9 @@ const CouponList = () => {
                     <td className="px-4 py-3 text-foreground">{c.credit_number || "-"}</td>
                     <td className="px-4 py-3 text-foreground">{c.company_due ?? "-"}</td>
                     <td className="px-4 py-3">
-                      {c.is_consumed ? (
+                      {c.is_unlimited ? (
+                        <Badge className="bg-blue-600 text-white">{t("unlimited")}</Badge>
+                      ) : c.is_consumed ? (
                         <Badge variant="secondary">{t("consumed")}</Badge>
                       ) : (
                         <Badge variant={c.is_active ? "default" : "secondary"} className={c.is_active ? "gold-gradient-bg text-primary-foreground" : ""}>
@@ -551,7 +554,7 @@ const CouponList = () => {
                         >
                           <Pencil className="h-4 w-4" />
                         </Button>
-                        {c.is_consumed && (
+                        {c.is_consumed && !c.is_unlimited && (
                           <Button
                             variant="ghost"
                             size="icon"

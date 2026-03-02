@@ -6,6 +6,7 @@ import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { toast } from "sonner";
 import { Sparkles } from "lucide-react";
+import { Switch } from "@/components/ui/switch";
 import * as XLSX from "xlsx";
 import { useLanguage } from "@/i18n/LanguageContext";
 
@@ -39,6 +40,7 @@ const CouponGenerator = () => {
   const [companyName, setCompanyName] = useState("");
   const [description, setDescription] = useState("");
   const [expiryDate, setExpiryDate] = useState("");
+  const [isUnlimited, setIsUnlimited] = useState(false);
   const [generatedCoupons, setGeneratedCoupons] = useState<GeneratedCoupon[]>([]);
   const [saving, setSaving] = useState(false);
 
@@ -84,6 +86,7 @@ const CouponGenerator = () => {
       expiry_date: c.expiry_date,
       created_by: user.id,
       batch_id: batchId,
+      is_unlimited: isUnlimited,
     }));
 
     const { error } = await supabase.from("coupons").insert(rows);
@@ -173,6 +176,13 @@ const CouponGenerator = () => {
         <div className="space-y-2 md:col-span-2 lg:col-span-3">
           <Label className="text-foreground">{t("description")}</Label>
           <Input value={description} onChange={(e) => setDescription(e.target.value)} placeholder={t("descriptionPlaceholder")} className="bg-secondary border-border" />
+        </div>
+        <div className="flex items-center gap-3 md:col-span-2 lg:col-span-3">
+          <Switch checked={isUnlimited} onCheckedChange={setIsUnlimited} />
+          <div>
+            <Label className="text-foreground">{t("unlimitedMultiUse")}</Label>
+            <p className="text-xs text-muted-foreground">{t("unlimitedNote")}</p>
+          </div>
         </div>
       </div>
 

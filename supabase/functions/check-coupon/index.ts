@@ -2,7 +2,7 @@ import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
-  "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type",
+  "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type, x-supabase-client-platform, x-supabase-client-platform-version, x-supabase-client-runtime, x-supabase-client-runtime-version",
 };
 
 Deno.serve(async (req) => {
@@ -27,7 +27,7 @@ Deno.serve(async (req) => {
 
     const { data, error } = await supabase
       .from("coupons")
-      .select("id, code, discount_type, discount_value, max_discount_value, company_name, expiry_date, is_active, is_consumed, consumed_at, consumed_by_customer, consumed_by_mobile, branch_name")
+      .select("id, code, discount_type, discount_value, max_discount_value, company_name, expiry_date, is_active, is_consumed, consumed_at, consumed_by_customer, consumed_by_mobile, branch_name, is_unlimited")
       .eq("code", code.trim().toUpperCase())
       .maybeSingle();
 
@@ -47,9 +47,12 @@ Deno.serve(async (req) => {
 
     const isExpired = data.expiry_date && new Date(data.expiry_date) < new Date();
 
+    // Unlimited coupons are valid even if previously consumed
+    const isValid = data.is_active && !isExpired && (data.is_unlimited || !data.is_consumed);
+
     return new Response(
       JSON.stringify({
-        valid: data.is_active && !data.is_consumed && !isExpired,
+        valid: isValid,
         coupon: {
           id: data.id,
           code: data.code,
@@ -65,6 +68,7 @@ Deno.serve(async (req) => {
           consumed_by_mobile: data.consumed_by_mobile,
           branch_name: data.branch_name,
           is_expired: !!isExpired,
+          is_unlimited: data.is_unlimited,
         },
       }),
       { status: 200, headers: { ...corsHeaders, "Content-Type": "application/json" } }

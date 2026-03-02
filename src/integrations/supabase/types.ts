@@ -14,6 +14,53 @@ export type Database = {
   }
   public: {
     Tables: {
+      coupon_consumptions: {
+        Row: {
+          branch_name: string
+          code: string
+          company_due: number | null
+          consumed_at: string
+          coupon_id: string
+          created_at: string
+          credit_number: string | null
+          customer_name: string | null
+          id: string
+          mobile_number: string | null
+        }
+        Insert: {
+          branch_name: string
+          code: string
+          company_due?: number | null
+          consumed_at?: string
+          coupon_id: string
+          created_at?: string
+          credit_number?: string | null
+          customer_name?: string | null
+          id?: string
+          mobile_number?: string | null
+        }
+        Update: {
+          branch_name?: string
+          code?: string
+          company_due?: number | null
+          consumed_at?: string
+          coupon_id?: string
+          created_at?: string
+          credit_number?: string | null
+          customer_name?: string | null
+          id?: string
+          mobile_number?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "coupon_consumptions_coupon_id_fkey"
+            columns: ["coupon_id"]
+            isOneToOne: false
+            referencedRelation: "coupons"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       coupons: {
         Row: {
           batch_id: string | null
@@ -34,6 +81,7 @@ export type Database = {
           id: string
           is_active: boolean
           is_consumed: boolean
+          is_unlimited: boolean
           max_discount_value: number | null
         }
         Insert: {
@@ -55,6 +103,7 @@ export type Database = {
           id?: string
           is_active?: boolean
           is_consumed?: boolean
+          is_unlimited?: boolean
           max_discount_value?: number | null
         }
         Update: {
@@ -76,6 +125,7 @@ export type Database = {
           id?: string
           is_active?: boolean
           is_consumed?: boolean
+          is_unlimited?: boolean
           max_discount_value?: number | null
         }
         Relationships: []

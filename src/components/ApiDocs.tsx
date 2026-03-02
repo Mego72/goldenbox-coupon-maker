@@ -135,6 +135,7 @@ apikey: ${ANON_KEY}`}</CodeBlock>
             <CardTitle className="text-lg font-mono">/consume-coupon</CardTitle>
           </div>
           <p className="text-sm text-muted-foreground mt-2">{t("consumeCouponDesc")}</p>
+          <p className="text-xs text-muted-foreground mt-1 italic">{t("unlimitedApiNote")}</p>
         </CardHeader>
         <CardContent className="space-y-4">
           <div>
