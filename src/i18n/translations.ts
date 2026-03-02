@@ -160,6 +160,13 @@ export const translations = {
     clearSort: "مسح الترتيب",
     page: "صفحة",
     error400UpdatePayment: "كود الكوبون مطلوب أو بيانات غير صالحة",
+    unlimited: "غير محدود",
+    unlimitedMultiUse: "غير محدود (متعدد الاستخدام)",
+    unlimitedDesc: "كوبون يمكن استهلاكه عدة مرات",
+    viewConsumptions: "سجل الاستهلاك",
+    consumptionCount: "عدد الاستهلاكات",
+    unlimitedNote: "عند تفعيل هذا الخيار، يمكن استهلاك الكوبون عدة مرات ويتم تسجيل كل استهلاك على حدة.",
+    unlimitedApiNote: "للكوبونات غير المحدودة: يتم تسجيل كل استهلاك في جدول منفصل ويبقى الكوبون نشطاً.",
   },
   en: {
     appName: "GoldenBox Discount Coupons",
@@ -320,6 +327,13 @@ export const translations = {
     clearSort: "Clear Sort",
     page: "page",
     error400UpdatePayment: "Coupon code is required or invalid data",
+    unlimited: "Unlimited",
+    unlimitedMultiUse: "Unlimited (Multi-use)",
+    unlimitedDesc: "Coupon can be consumed multiple times",
+    viewConsumptions: "Consumption Log",
+    consumptionCount: "Consumption Count",
+    unlimitedNote: "When enabled, this coupon can be consumed multiple times and each consumption is logged separately.",
+    unlimitedApiNote: "For unlimited coupons: each consumption is logged in a separate table and the coupon remains active.",
   },
 } as const;
 

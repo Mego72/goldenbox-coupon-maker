@@ -24,6 +24,7 @@ interface Coupon {
   batch_id: string | null;
   credit_number: string | null;
   company_due: number | null;
+  is_unlimited: boolean;
 }
 
 interface ConsumptionReportProps {

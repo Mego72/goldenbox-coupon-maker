@@ -2,10 +2,8 @@ import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
-  "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type",
+  "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type, x-supabase-client-platform, x-supabase-client-platform-version, x-supabase-client-runtime, x-supabase-client-runtime-version",
 };
-
-
 
 Deno.serve(async (req) => {
   if (req.method === "OPTIONS") {
@@ -51,7 +49,7 @@ Deno.serve(async (req) => {
     // Check coupon exists and status
     const { data: coupon, error: fetchError } = await supabase
       .from("coupons")
-      .select("id, is_active, is_consumed, expiry_date")
+      .select("id, is_active, is_consumed, expiry_date, is_unlimited")
       .eq("code", code.trim().toUpperCase())
       .maybeSingle();
 
@@ -69,7 +67,8 @@ Deno.serve(async (req) => {
       );
     }
 
-    if (coupon.is_consumed) {
+    // For non-unlimited coupons, check if already consumed
+    if (!coupon.is_unlimited && coupon.is_consumed) {
       return new Response(
         JSON.stringify({ success: false, error: "Coupon already consumed" }),
         { status: 409, headers: { ...corsHeaders, "Content-Type": "application/json" } }
@@ -91,39 +90,73 @@ Deno.serve(async (req) => {
       );
     }
 
-    // Consume the coupon
-    const updateData: Record<string, unknown> = {
-      is_consumed: true,
-      consumed_at: new Date().toISOString(),
-      consumed_by_customer: customer_name.trim(),
-      consumed_by_mobile: mobile_number.trim(),
-      branch_name: branch_name.trim(),
-      is_active: false,
-    };
+    if (coupon.is_unlimited) {
+      // For unlimited coupons, insert into coupon_consumptions table
+      const consumptionData: Record<string, unknown> = {
+        coupon_id: coupon.id,
+        code: code.trim().toUpperCase(),
+        branch_name: branch_name.trim(),
+        customer_name: customer_name.trim(),
+        mobile_number: mobile_number.trim(),
+      };
 
-    if (credit_number !== undefined && typeof credit_number === "string") {
-      updateData.credit_number = credit_number.trim();
-    }
-    if (company_due !== undefined && typeof company_due === "number" && company_due >= 0) {
-      updateData.company_due = company_due;
-    }
+      if (credit_number !== undefined && typeof credit_number === "string") {
+        consumptionData.credit_number = credit_number.trim();
+      }
+      if (company_due !== undefined && typeof company_due === "number" && company_due >= 0) {
+        consumptionData.company_due = company_due;
+      }
 
-    const { error: updateError } = await supabase
-      .from("coupons")
-      .update(updateData)
-      .eq("id", coupon.id);
+      const { error: insertError } = await supabase
+        .from("coupon_consumptions")
+        .insert(consumptionData);
 
-    if (updateError) {
+      if (insertError) {
+        return new Response(
+          JSON.stringify({ error: "Failed to log consumption" }),
+          { status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+        );
+      }
+
       return new Response(
-        JSON.stringify({ error: "Failed to consume coupon" }),
-        { status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+        JSON.stringify({ success: true, message: "Coupon consumed successfully (unlimited)" }),
+        { status: 200, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+      );
+    } else {
+      // Single-use coupon: mark as consumed
+      const updateData: Record<string, unknown> = {
+        is_consumed: true,
+        consumed_at: new Date().toISOString(),
+        consumed_by_customer: customer_name.trim(),
+        consumed_by_mobile: mobile_number.trim(),
+        branch_name: branch_name.trim(),
+        is_active: false,
+      };
+
+      if (credit_number !== undefined && typeof credit_number === "string") {
+        updateData.credit_number = credit_number.trim();
+      }
+      if (company_due !== undefined && typeof company_due === "number" && company_due >= 0) {
+        updateData.company_due = company_due;
+      }
+
+      const { error: updateError } = await supabase
+        .from("coupons")
+        .update(updateData)
+        .eq("id", coupon.id);
+
+      if (updateError) {
+        return new Response(
+          JSON.stringify({ error: "Failed to consume coupon" }),
+          { status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+        );
+      }
+
+      return new Response(
+        JSON.stringify({ success: true, message: "Coupon consumed successfully" }),
+        { status: 200, headers: { ...corsHeaders, "Content-Type": "application/json" } }
       );
     }
-
-    return new Response(
-      JSON.stringify({ success: true, message: "Coupon consumed successfully" }),
-      { status: 200, headers: { ...corsHeaders, "Content-Type": "application/json" } }
-    );
   } catch {
     return new Response(
       JSON.stringify({ error: "Invalid request" }),
