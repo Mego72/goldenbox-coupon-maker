@@ -365,14 +365,28 @@ const CouponList = () => {
   const handleViewConsumptions = async (coupon: Coupon) => {
     setConsumptionCoupon(coupon);
     setLoadingConsumptions(true);
-    const { data, error } = await supabase
-      .from("coupon_consumptions")
-      .select("*")
-      .eq("coupon_id", coupon.id)
-      .order("consumed_at", { ascending: false });
-    if (!error && data) {
-      setConsumptions(data);
-    } else {
+    try {
+      let allData: any[] = [];
+      const batchSize = 1000;
+      let offset = 0;
+      let hasMore = true;
+      while (hasMore) {
+        const { data, error } = await supabase
+          .from("coupon_consumptions")
+          .select("*")
+          .eq("coupon_id", coupon.id)
+          .order("consumed_at", { ascending: false })
+          .range(offset, offset + batchSize - 1);
+        if (error || !data) {
+          hasMore = false;
+        } else {
+          allData = [...allData, ...data];
+          hasMore = data.length === batchSize;
+          offset += batchSize;
+        }
+      }
+      setConsumptions(allData);
+    } catch {
       setConsumptions([]);
     }
     setLoadingConsumptions(false);
