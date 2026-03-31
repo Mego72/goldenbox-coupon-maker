@@ -73,15 +73,39 @@ const ConsumptionReport = ({ coupons, onBack }: ConsumptionReportProps) => {
     const fetchUnlimitedConsumptions = async () => {
       setLoading(true);
       const ids = unlimitedCoupons.map((c) => c.id);
-      const { data, error } = await supabase
-        .from("coupon_consumptions")
-        .select("code, customer_name, mobile_number, branch_name, consumed_at, company_due, credit_number")
-        .in("coupon_id", ids)
-        .order("consumed_at", { ascending: false });
+      const batchSize = 1000;
+      let from = 0;
+      let hasMore = true;
+      let allRows: Array<{
+        code: string;
+        customer_name: string | null;
+        mobile_number: string | null;
+        branch_name: string | null;
+        consumed_at: string | null;
+        company_due: number | null;
+        credit_number: string | null;
+      }> = [];
 
-      if (!error && data) {
+      while (hasMore) {
+        const { data, error } = await supabase
+          .from("coupon_consumptions")
+          .select("code, customer_name, mobile_number, branch_name, consumed_at, company_due, credit_number")
+          .in("coupon_id", ids)
+          .order("consumed_at", { ascending: false })
+          .range(from, from + batchSize - 1);
+
+        if (error || !data) {
+          hasMore = false;
+        } else {
+          allRows = [...allRows, ...data];
+          hasMore = data.length === batchSize;
+          from += batchSize;
+        }
+      }
+
+      if (allRows.length > 0) {
         setUnlimitedRows(
-          data.map((r) => ({
+          allRows.map((r) => ({
             code: r.code,
             consumed_by_customer: r.customer_name,
             consumed_by_mobile: r.mobile_number,
@@ -91,6 +115,8 @@ const ConsumptionReport = ({ coupons, onBack }: ConsumptionReportProps) => {
             credit_number: r.credit_number,
           }))
         );
+      } else {
+        setUnlimitedRows([]);
       }
       setLoading(false);
     };
